@@ -166,10 +166,11 @@ def _route_to_specialist(category: str, user_message: str):
             break
 
     if detected_doc:
-        from .document_generator import generate_document, extract_structured_data
-        # Strukturierte Daten extrahieren (Firma: X, Vorname: Y, etc.)
+        from .document_generator import extract_structured_data
+        from .llm_service import generate_response as llm_generate
+
+        # Strukturierte Daten extrahieren
         struct = extract_structured_data(user_message)
-        # Firma aus "Firma: X" oder "für X"
         company_name = struct.get('company', '').strip()
         if not company_name:
             cm = _re.search(
@@ -179,7 +180,56 @@ def _route_to_specialist(category: str, user_message: str):
                 user_message.split('\n')[0], _re.IGNORECASE
             )
             company_name = cm.group(1).strip() if cm else ''
-        return generate_document(detected_doc, company_name, user_message, struct)
+
+        # Bekannte Daten als strukturierten Kontext für das LLM aufbereiten
+        known = []
+        if company_name:                       known.append(f"Firma: {company_name}")
+        fn = struct.get('first_name','')
+        ln = struct.get('last_name','')
+        if fn or ln:                           known.append(f"Inhaber: {fn} {ln}".strip())
+        if struct.get('address'):              known.append(f"Adresse: {struct['address']}")
+        if struct.get('email'):                known.append(f"E-Mail: {struct['email']}")
+        if struct.get('phone'):                known.append(f"Telefon: {struct['phone']}")
+        if struct.get('url'):                  known.append(f"Website: {struct['url']}")
+        if struct.get('vat_id'):               known.append(f"USt-IdNr.: {struct['vat_id']}")
+        if struct.get('no_vat'):               known.append("Umsatzsteuer: Keine (Kleinunternehmerregelung § 19 UStG)")
+        if struct.get('rechtsform'):           known.append(f"Rechtsform: {struct['rechtsform']}")
+
+        known_block = "\n".join(known) if known else "(keine Daten angegeben – Platzhalter verwenden)"
+
+        doc_labels = {
+            'impressum':      'Impressum gemäß § 5 TMG',
+            'datenschutz':    'Datenschutzerklärung gemäß DSGVO',
+            'agb':            'Allgemeine Geschäftsbedingungen',
+            'nda':            'Geheimhaltungsvereinbarung (NDA)',
+            'arbeitsvertrag': 'Arbeitsvertrag',
+            'rechnung':       'Rechnungsvorlage',
+            'mahnschreiben':  'Mahnschreiben',
+        }
+        doc_label = doc_labels.get(detected_doc, detected_doc)
+
+        llm_prompt = f"""Erstelle ein vollständiges, professionelles Dokument: **{doc_label}**
+
+Folgende Daten wurden vom Nutzer angegeben — verwende sie EXAKT so, ohne Platzhalter für bekannte Felder:
+{known_block}
+
+Regeln:
+- Felder die bekannt sind: direkt eintragen, KEIN Platzhalter
+- Felder die fehlen: als [Platzhalter] kennzeichnen und am Ende in einer kurzen Checkliste auflisten
+- Format: sauberes Markdown mit ## Überschriften
+- Sprache: Deutsch
+- Keine unnötigen Erklärungen davor — starte direkt mit dem Dokument
+- Am Ende: einzeiliger ⚖️ Hinweis dass dies eine Vorlage ist"""
+
+        result = llm_generate(prompt=llm_prompt)
+        llm_text = result.get('text', '').strip()
+
+        # Fallback auf Template-Generator wenn LLM versagt
+        if not llm_text or len(llm_text) < 100:
+            from .document_generator import generate_document
+            return generate_document(detected_doc, company_name, user_message, struct)
+
+        return llm_text
 
     if category == 'legal':
         result = get_legal_assistant().analyze_legal_question(user_message)

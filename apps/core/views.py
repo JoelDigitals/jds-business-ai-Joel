@@ -405,3 +405,28 @@ class GDPRDeleteAccountView(APIView):
     def post(self, request):
         request.user.request_data_deletion()
         return Response({'message': 'Löschanfrage eingereicht. Daten werden innerhalb von 30 Tagen gelöscht.'})
+
+
+"""
+JDS Business AI - Core Views
+Impressum, Datenschutz und andere statische Seiten
+"""
+from django.views.generic import TemplateView
+
+
+class ImpressumView(TemplateView):
+    template_name = "legal/impressum.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["active_page"] = "impressum"
+        return ctx
+
+
+class DatenschutzView(TemplateView):
+    template_name = "legal/datenschutz.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["active_page"] = "datenschutz"
+        return ctx

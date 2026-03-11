@@ -11,38 +11,89 @@ CURRENT_YEAR = datetime.now().year
 def extract_structured_data(user_message):
     """
     Extrahiert strukturierte Felder aus User-Nachrichten.
-    Erkennt Muster wie: Firma: X, Vorname: Y, Adresse: Z, Email: X, etc.
+    Unterstützt BEIDE Formate:
+      - Strukturiert: "Firma: Joel Digitals\nVorname: Joel\n..."
+      - Freitext:     "Schreibe ein Impressum für Joel Digitals (www.joel-digitals.de)"
     """
     data = {}
     msg = user_message
 
-    field_patterns = [
-        ('company',    r'(?:firma|company|unternehmen|unternehmensname)\s*[:\-]\s*(.+?)(?=\s+(?:vorname|nachname|adresse|email|tel|plz|keine|ust|website)|[,\n]|$)'),
+    # ── 1. Strukturierte Felder mit Label: Wert ──────────────────────────────
+    labeled_patterns = [
+        ('company',    r'(?:firma|company|unternehmen(?:sname)?)\s*[:\-]\s*(.+?)(?=\s*\n|\s+(?:vorname|nachname|adresse|email|tel|plz|keine|ust|website|steuernummer)|$)'),
         ('first_name', r'(?:vorname|firstname)\s*[:\-]\s*([A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df\-]+)'),
         ('last_name',  r'(?:nachname|lastname|familienname)\s*[:\-]\s*([A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df\-]+)'),
-        ('address',    r'(?:adresse|anschrift|stra\u00dfe|str\.)\s*[:\-]\s*(.+?)(?=\s+(?:email|tel|plz|vorname|nachname|keine|ust)|[,\n]|$)'),
+        ('address',    r'(?:adresse|anschrift|stra\u00dfe|str\.)\s*[:\-]\s*(.+?)(?=\s*\n|\s+(?:email|tel|vorname|nachname|keine|ust|steuernummer)|$)'),
         ('email',      r'(?:email|e-mail|mail)\s*[:\-]\s*([^\s,\n]+@[^\s,\n]+)'),
         ('phone',      r'(?:tel(?:efon)?|phone|mobil)\s*[:\-]\s*([+\d\s\-/()]{7,})'),
         ('url',        r'(?:website|webseite|url|domain|homepage)\s*[:\-]\s*([^\s,\n]+)'),
-        ('vat_id',     r'(?:ust(?:\s*-?\s*id(?:nr\.?)?)?|umsatzsteuer\s*id(?:nr\.)?)\s*[:\-]\s*([DE\d]+)'),
-        ('tax_no',     r'(?:steuernummer|steuer\s*nr\.?)\s*[:\-]\s*([/\d ]+)'),
+        ('vat_id',     r'(?:ust(?:\s*-?\s*id(?:nr\.?)?)?|umsatzsteuer[-\s]?id(?:nr\.)?)\s*[:\-]\s*([DE\d]+)'),
+        ('tax_no',     r'(?:steuernummer|steuer[-\s]?nr\.?)\s*[:\-]\s*([/\d ]+)'),
         ('rechtsform', r'(?:rechtsform|firmierung)\s*[:\-]\s*([A-Za-z]+)'),
     ]
-    for key, pattern in field_patterns:
-        m = re.search(pattern, msg, re.IGNORECASE)
+    for key, pattern in labeled_patterns:
+        m = re.search(pattern, msg, re.IGNORECASE | re.MULTILINE)
         if m:
             data[key] = m.group(1).strip().rstrip(',. ')
 
-    # Boolesche Flags
-    if re.search(r'keine\s+umsatzsteuer|kleinunternehmer|ohne\s+ust', msg, re.IGNORECASE):
+    # ── 2. Freitext-Extraktion: URL in Klammern oder nach "für/von" ──────────
+    # URL überall im Text — auch in Klammern wie "(www.joel-digitals.de)"
+    if 'url' not in data:
+        url_m = re.search(
+            r'(?:^|\s|\()((https?://|www\.)[^\s\),\n]+)',
+            msg, re.IGNORECASE
+        )
+        if url_m:
+            data['url'] = url_m.group(1).rstrip(')')
+
+    # E-Mail überall im Text
+    if 'email' not in data:
+        mail_m = re.search(r'[\w.\-]+@[\w.\-]+\.\w{2,}', msg)
+        if mail_m:
+            data['email'] = mail_m.group(0)
+
+    # Telefon überall
+    if 'phone' not in data:
+        tel_m = re.search(r'(?<!\d)(\+49[\d\s\-/()]{6,}|\b0[\d\s\-/()]{7,})', msg)
+        if tel_m:
+            data['phone'] = tel_m.group(1).strip()
+
+    # Deutsche Adresse (Straße Nr, PLZ Stadt) — auch ohne Label
+    if 'address' not in data:
+        addr_m = re.search(
+            r'([A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df][A-Za-z\u00e4\u00f6\u00fc\u00df\s\-]+\s+\d+[a-z]?'
+            r'(?:[,\s]+\d{5}\s+[A-Za-z\u00e4\u00f6\u00fc\u00df\s]+)?)',
+            msg, re.IGNORECASE
+        )
+        if addr_m:
+            data['address'] = addr_m.group(1).strip().rstrip(',')
+
+    # ── 3. Firmenname aus Freitext wenn kein Label gefunden ──────────────────
+    if 'company' not in data:
+        # "für Joel Digitals" / "von Joel Digitals" / "der Firma Joel Digitals"
+        co_m = re.search(
+            r'(?:f\u00fcr|fuer|von|der\s+firma|unternehmen)\s+'
+            r'([A-Z\u00c4\u00d6\u00dc][A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df0-9 &.\-]{1,50}?)'
+            r'(?=\s*[\(\.,\n]|\s+(?:mit|und|f\u00fcr|in|ab|ist|hat|gmbh|ug|ag|www\.|https?:)|$)',
+            msg, re.IGNORECASE
+        )
+        if co_m:
+            raw = co_m.group(1).strip().rstrip(',. ')
+            # Keine Verben/Stopwörter als Firmenname
+            if raw.lower() not in {'ein', 'eine', 'einen', 'mein', 'meine', 'meinen', 'uns', 'mir'}:
+                data['company'] = raw
+
+    # ── 4. Boolesche Flags ───────────────────────────────────────────────────
+    if re.search(r'keine\s+umsatzsteuer|kleinunternehmer|ohne\s+ust|keine\s+ust', msg, re.IGNORECASE):
         data['no_vat'] = True
     if re.search(r'keine?\s+steuernummer', msg, re.IGNORECASE):
         data['no_tax_no'] = True
 
-    # Rechtsform aus Firmennamen ableiten
-    if 'company' in data and 'rechtsform' not in data:
+    # ── 5. Rechtsform aus Firmennamen ableiten ───────────────────────────────
+    company_str = data.get('company', '') + ' ' + msg
+    if 'rechtsform' not in data:
         for form in ['GmbH', 'UG', 'AG', 'GbR', 'OHG', 'KG']:
-            if form.lower() in data['company'].lower():
+            if re.search(r'\b' + form + r'\b', company_str, re.IGNORECASE):
                 data['rechtsform'] = form
                 break
 
@@ -91,109 +142,134 @@ def _gen_impressum(company, extras, msg):
     rechtsform = extras.get('rechtsform', 'Einzelunternehmen')
     first = extras.get('first_name', '')
     last  = extras.get('last_name', '')
-    owner = (f"{first} {last}".strip()) or extras.get('owner', '[Vorname Nachname]')
+    owner = (f"{first} {last}".strip()) or extras.get('owner', '')
     raw_address = extras.get('address', '')
-    email = extras.get('email', '[kontakt@ihre-website.de]')
-    phone = extras.get('phone', '+49 [Vorwahl] [Nummer]')
+    email = extras.get('email', '')
+    phone = extras.get('phone', '')
+    url   = extras.get('url', '')
     no_vat = extras.get('no_vat', False)
+
+    # URL sauber formatieren
+    if url and not url.startswith('http'):
+        url_display = url
+        url_href = 'https://' + url.lstrip('www.')
+    elif url:
+        url_display = url.replace('https://', '').replace('http://', '')
+        url_href = url
+    else:
+        url_display = ''
+        url_href = ''
 
     # PLZ+Stadt aus Adresse trennen
     street = raw_address
     city_plz = ''
     if raw_address:
-        city_m = re.search(r'(\d{5}\s+[A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df ]+)', raw_address)
+        city_m = re.search(r'(\d{5}\s+[A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df][A-Za-z\u00e4\u00f6\u00fc\u00df\s\-]+)', raw_address)
         if city_m:
             city_plz = city_m.group(1).strip()
             street = raw_address[:raw_address.find(city_m.group(0))].strip().rstrip(',')
-    if not street:
-        street = '[Stra\u00dfe und Hausnummer]'
-    if not city_plz:
-        city_plz = extras.get('city', '[PLZ] [Stadt]')
 
     # GmbH/UG extra section
     gf_section = ''
     if rechtsform in ('GmbH', 'UG', 'AG'):
         gf_section = (
             f"\n**Handelsregister:** Amtsgericht [Stadt], HRB [Nummer]"
-            f"\n**Gesch\u00e4ftsf\u00fchrer/in:** {owner}"
+            f"\n**Gesch\u00e4ftsf\u00fchrer/in:** {owner or '[Name]'}"
             f"\n**Stammkapital:** [Betrag] EUR"
         )
 
     # USt-Abschnitt
     if no_vat:
         vat_section = (
-            "Gem\u00e4\u00df \u00a7 19 UStG wird keine Umsatzsteuer erhoben und daher nicht ausgewiesen "
-            "(Kleinunternehmerregelung)."
+            "Gem\u00e4\u00df \u00a7\u00a019 UStG wird keine Umsatzsteuer erhoben und "
+            "daher nicht ausgewiesen (Kleinunternehmerregelung)."
         )
     else:
         vat_id = extras.get('vat_id', '')
         if vat_id:
-            vat_section = f"Umsatzsteuer-Identifikationsnummer gem\u00e4\u00df \u00a7 27a UStG: **{vat_id}**"
+            vat_section = f"Umsatzsteuer-Identifikationsnummer gem\u00e4\u00df \u00a7\u00a027a UStG: **{vat_id}**"
         else:
-            vat_section = "Umsatzsteuer-Identifikationsnummer gem\u00e4\u00df \u00a7 27a UStG: DE[Ihre USt-IdNr.]"
+            vat_section = None  # fehlt → in Checkliste
 
-    # Checkliste nur fuer fehlende Felder
+    # Kontaktzeilen zusammenbauen (nur vorhandene)
+    contact_lines = []
+    if phone:
+        contact_lines.append(f"Telefon: {phone}")
+    if email:
+        contact_lines.append(f"E-Mail: {email}")
+    if url_display:
+        contact_lines.append(f"Website: {url_display}")
+    contact_block = '\n'.join(contact_lines) if contact_lines else '_Kontaktdaten noch eintragen_'
+
+    # Adressblock
+    addr_lines = []
+    if street:
+        addr_lines.append(street)
+    if city_plz:
+        addr_lines.append(city_plz)
+    if addr_lines:
+        addr_lines.append('Deutschland')
+    addr_block = '\n'.join(addr_lines) if addr_lines else '_Adresse noch eintragen_'
+
+    # Verantwortlicher
+    verantw_name = owner or company
+    verantw_addr = f"{street}, {city_plz}" if (street and city_plz) else addr_block
+
+    # ── Checkliste — NUR für fehlende Felder ──
     checklist = []
-    if '[Stra' in street:
-        checklist.append('- [ ] Stra\u00dfe & Hausnummer eintragen')
-    if '[PLZ]' in city_plz:
-        checklist.append('- [ ] PLZ und Stadt eintragen')
-    if '[Vorwahl]' in phone:
-        checklist.append('- [ ] Telefonnummer eintragen')
-    if '[kontakt' in email:
+    if not owner:
+        checklist.append('- [ ] Vor- und Nachname des Inhabers eintragen')
+    if not street or not city_plz:
+        checklist.append('- [ ] Vollst\u00e4ndige Adresse (Stra\u00dfe, PLZ, Stadt) erg\u00e4nzen')
+    if not phone and not email:
+        checklist.append('- [ ] Mindestens eine Kontaktm\u00f6glichkeit (Tel. oder E-Mail) eintragen')
+    if not email:
         checklist.append('- [ ] E-Mail-Adresse eintragen')
-    if not no_vat and '[Ihre' in vat_section:
-        checklist.append('- [ ] USt-IdNr. eintragen oder Kleinunternehmer-Hinweis aktivieren')
+    if vat_section is None:
+        checklist.append('- [ ] USt-IdNr. eintragen **oder** Kleinunternehmerregelung aktivieren (§\u00a019 UStG)')
     if rechtsform in ('GmbH', 'UG', 'AG'):
         checklist.append('- [ ] Handelsregisternummer eintragen')
     checklist.append('- [ ] Impressum im Footer jeder Seite gut sichtbar verlinken')
 
-    cl_text = '\n'.join(checklist) if checklist else '- \u2705 Alle Felder vollst\u00e4ndig!'
+    cl_text = '\n'.join(checklist) if checklist else '- \u2705 Alle Pflichtfelder ausgef\u00fcllt!'
 
-    return f"""## Impressum f\u00fcr {company}
+    vat_block = vat_section if vat_section else '_USt-IdNr. noch eintragen oder Kleinunternehmerregelung aktivieren_'
+
+    return f"""## Impressum \u2013 {company}
 
 ---
-
-## Impressum
 
 **Angaben gem\u00e4\u00df \u00a7 5 TMG**
 
-**{company}**
-{owner}
-{street}
-{city_plz}
-Deutschland
+**{company}**{f"{chr(10)}{owner}" if owner else ""}
+{addr_block}
 {gf_section}
-
 **Kontakt:**
-Telefon: {phone}
-E-Mail: {email}
+{contact_block}
 
 **Umsatzsteuer:**
-{vat_section}
+{vat_block}
 
 **Verantwortlich f\u00fcr den Inhalt nach \u00a7 55 Abs. 2 RStV:**
-{owner}
-{street}, {city_plz}
+{verantw_name}
+{verantw_addr}
 
 ---
 
-## Haftungsausschluss
+### Haftungsausschluss
 
 **Haftung f\u00fcr Inhalte**
-Die Inhalte dieser Website wurden mit gr\u00f6\u00dfter Sorgfalt erstellt. F\u00fcr die Richtigkeit, Vollst\u00e4ndigkeit und Aktualit\u00e4t der Inhalte kann keine Gew\u00e4hr \u00fcbernommen werden.
+Die Inhalte dieser Website wurden mit gr\u00f6\u00dfter Sorgfalt erstellt. F\u00fcr die Richtigkeit, Vollst\u00e4ndigkeit und Aktualit\u00e4t der Inhalte kann keine Gew\u00e4hr \u00fcbernommen werden. Als Diensteanbieter sind wir gem\u00e4\u00df \u00a7 7 Abs. 1 TMG f\u00fcr eigene Inhalte nach den allgemeinen Gesetzen verantwortlich.
 
 **Haftung f\u00fcr Links**
-Das Angebot enth\u00e4lt Links zu externen Webseiten Dritter. F\u00fcr die Inhalte verlinkter Seiten ist stets der jeweilige Anbieter verantwortlich.
+Das Angebot enth\u00e4lt Links zu externen Webseiten Dritter. F\u00fcr die Inhalte verlinkter Seiten ist stets der jeweilige Anbieter verantwortlich. Zum Zeitpunkt der Verlinkung wurden keine Rechtsverst\u00f6\u00dfe festgestellt.
 
 **Urheberrecht**
-Die durch die Seitenbetreiber erstellten Inhalte und Werke unterliegen dem deutschen Urheberrecht.
+Die durch den Seitenbetreiber erstellten Inhalte und Werke unterliegen dem deutschen Urheberrecht. Vervielf\u00e4ltigung, Bearbeitung und Verbreitung bed\u00fcrfen der schriftlichen Zustimmung.
 
 ---
 
-\U0001f4a1 **Checkliste:**
-{cl_text}
-
+{f"💡 **Checkliste f\u00fcr fehlende Angaben:**{chr(10)}{cl_text}{chr(10)}{chr(10)}" if any('[ ]' in c for c in checklist) else "✅ **Alle Pflichtfelder ausgef\u00fcllt!**{chr(10)}{chr(10)}"}\
 \u2696\ufe0f **Hinweis:** Vorlage gem\u00e4\u00df \u00a7 5 TMG. Bei GmbH/UG oder speziellen Branchen empfiehlt sich eine anwaltliche Pr\u00fcfung."""
 
 

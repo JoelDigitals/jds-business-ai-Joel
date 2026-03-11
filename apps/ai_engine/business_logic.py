@@ -886,41 +886,8 @@ Was macht dich einzigartig?
 
 ⚖️ **Wichtig**: Arbeitsrecht ist komplex. Für individuelle Verträge immer Rechtsanwalt einschalten!"""
 
-    # ── Default: Zuletzt noch Dokument-Generator versuchen ──
-    # (Fängt Fälle ab die durch den Intent-Check in views.py nicht erkannt wurden)
+    # ── Default: Letzter Fallback ──
     else:
-        DOC_KEYWORDS = {
-            'impressum': ['impressum'],
-            'datenschutz': ['datenschutz', 'datenschutzerklärung'],
-            'agb': [' agb', 'allgemeine geschäftsbedingungen'],
-            'nda': ['nda', 'geheimhaltungsvertrag'],
-            'arbeitsvertrag': ['arbeitsvertrag', 'anstellungsvertrag'],
-            'rechnung': ['rechnungsvorlage', 'musterrechnung'],
-            'mahnschreiben': ['mahnung', 'mahnschreiben'],
-        }
-        detected_doc = None
-        for dk, dkw in DOC_KEYWORDS.items():
-            if any(k in message_lower for k in dkw):
-                detected_doc = dk
-                break
-        if detected_doc:
-            import re
-            try:
-                from .document_generator import generate_document, extract_structured_data
-                struct = extract_structured_data(user_message)
-                company = struct.get('company', '')
-                if not company:
-                    cm = re.search(
-                        r'(?:für|fuer|for|von|firma|unternehmen)[ \t]+'
-                        r'([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß0-9 \-\.&]+?)'
-                        r'(?:\s+(?:mit|und|für|in)|[,\.?!\n]|$)',
-                        user_message.split('\n')[0], re.IGNORECASE
-                    )
-                    company = cm.group(1).strip() if cm else ''
-                return generate_document(detected_doc, company, user_message, struct)
-            except Exception:
-                pass
-
         # Letzter Fallback: hilfreiche generische Antwort
         return """Wie kann ich dir helfen? Ich bin **JDS Business AI** — dein Assistent für Gründer & Unternehmer.
 

@@ -1,13 +1,16 @@
 """JDS Core URLs"""
 from django.urls import path
 from . import views
+from .views import ImpressumView, DatenschutzView
 
 urlpatterns = [
     # Pages
     path('', views.landing_page, name='landing'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('chat/', views.chat_view, name='chat'),
-    path('datenschutz/', views.privacy_policy, name='privacy'),
+    path("impressum/", ImpressumView.as_view(), name="impressum"),
+    path("datenschutz/", DatenschutzView.as_view(), name="datenschutz"),
+    path('privacy/', views.privacy_policy, name='privacy'),
     path('nutzungsbedingungen/', views.terms_of_service, name='terms'),
 
     # Auth (normale Seiten)

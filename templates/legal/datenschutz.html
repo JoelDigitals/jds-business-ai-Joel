@@ -1,0 +1,473 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Datenschutzerklärung | JDS Business AI{% endblock %}
+{% block meta_description %}Datenschutzerklärung von Joel Digitals für JDS Business AI – gemäß DSGVO und BDSG.{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<div class="relative overflow-hidden bg-slate-900 border-b border-slate-800">
+  <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/10 to-slate-900/50"></div>
+  <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+  
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+    <div class="max-w-3xl">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-6">
+        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+        Rechtliche Angaben · DSGVO & BDSG
+      </div>
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight">
+        Datenschutzerklärung
+      </h1>
+      <p class="text-xl text-slate-400 mb-4">
+        Für <span class="text-indigo-400 font-medium">JDS Business AI</span> – ein Produkt von Joel Digitals
+      </p>
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        Stand: {% now "F Y" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+    
+    <!-- Sidebar Navigation -->
+    <div class="lg:col-span-3">
+      <div class="sticky top-24 space-y-8">
+        <!-- Table of Contents -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+          <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+            Inhalt
+          </h3>
+          <nav class="space-y-1">
+            <a href="#verantwortlicher" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">01</span>
+              Verantwortlicher
+            </a>
+            <a href="#erhebung" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">02</span>
+              Datenerhebung
+            </a>
+            <a href="#ki" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">03</span>
+              KI-Nutzung
+            </a>
+            <a href="#kontakt" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">04</span>
+              Kontakt
+            </a>
+            <a href="#hosting" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">05</span>
+              Hosting
+            </a>
+            <a href="#cookies" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">06</span>
+              Cookies
+            </a>
+            <a href="#rechte" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">07</span>
+              Ihre Rechte
+            </a>
+            <a href="#beschwerde" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+              <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-xs font-medium text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">08</span>
+              Beschwerderecht
+            </a>
+          </nav>
+        </div>
+
+        <!-- Quick Contact -->
+        <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white">
+          <h4 class="font-semibold mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Datenschutz-Anfragen
+          </h4>
+          <p class="text-sm text-indigo-100 mb-4">Bei Fragen zum Datenschutz erreichen Sie uns direkt:</p>
+          <a href="mailto:info@joel-digitals.com" class="inline-flex items-center gap-2 text-sm font-medium bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
+            info@joel-digitals.com
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="lg:col-span-9 space-y-16">
+      
+      <!-- Section 1 -->
+      <section id="verantwortlicher" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <span class="text-indigo-400 font-bold">§1</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Verantwortlicher</h2>
+            <p class="text-slate-500 text-sm">Im Sinne der DSGVO</p>
+          </div>
+        </div>
+        
+        <div class="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
+          <div class="p-6 md:p-8 space-y-6">
+            <p class="text-slate-300 leading-relaxed">
+              Verantwortlicher im Sinne der DSGVO für den Betrieb von <strong class="text-white">JDS Business AI</strong>:
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Name</span>
+                  <span class="text-slate-200">Joel Nicolay</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Unternehmen</span>
+                  <span class="text-slate-200 font-medium">Joel Digitals</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Adresse</span>
+                  <span class="text-slate-200">Niederweisstraße 20<br>66822 Lebach</span>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">E-Mail</span>
+                  <a href="mailto:info@joel-digitals.com" class="text-indigo-400 hover:text-indigo-300 transition-colors">info@joel-digitals.com</a>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Website</span>
+                  <a href="https://www.joel-digitals.de" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 transition-colors inline-flex items-center gap-1">
+                    www.joel-digitals.de
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="erhebung" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <span class="text-indigo-400 font-bold">§2</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Datenerhebung beim Websitebesuch</h2>
+            <p class="text-slate-500 text-sm">Server-Logfiles & technische Daten</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed text-lg">
+            Bei der Nutzung der Website werden automatisch technische Informationen durch den Server erfasst (<strong class="text-white">Server-Logfiles</strong>). Dies umfasst:
+          </p>
+          
+          <ul class="space-y-3 mt-6">
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>IP-Adresse des anfragenden Geräts (nach 7 Tagen anonymisiert)</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>Datum und Uhrzeit des Zugriffs</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>Aufgerufene Seiten und URLs</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>Browsertyp, Betriebssystem und Referrer-URL</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>Übertragene Datenmenge und HTTP-Statuscode</span>
+            </li>
+          </ul>
+          
+          <div class="mt-6 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <p class="text-slate-300 text-sm">
+              Diese Daten sind technisch erforderlich, um die Website bereitzustellen, und werden nicht mit anderen Datenquellen zusammengeführt.
+            </p>
+          </div>
+          
+          <div class="mt-6 flex items-center gap-2 text-sm">
+            <span class="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded font-medium">Rechtsgrundlage</span>
+            <span class="text-slate-400">Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="ki" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+            <span class="text-purple-400 font-bold">§3</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">KI-Nutzung & Chat-Eingaben</h2>
+            <p class="text-slate-500 text-sm">Verarbeitung durch Künstliche Intelligenz</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed text-lg">
+            JDS Business AI ist ein KI-gestützter Assistent für Gründer und Unternehmer. Wenn Sie den Chat nutzen, werden Ihre eingegebenen Texte (<strong class="text-white">Prompts</strong>) verarbeitet, um Antworten zu generieren.
+          </p>
+          
+          <h3 class="text-xl font-semibold text-white mt-8 mb-4">Was passiert mit Ihren Eingaben?</h3>
+          
+          <ul class="space-y-3">
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Eingaben werden zur Verarbeitung an den KI-Dienst übermittelt</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Konversationsverläufe können temporär gespeichert werden, um den Kontext einer Sitzung zu erhalten</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <span>Wir empfehlen, keine hochsensiblen personenbezogenen Daten (z. B. Bankdaten, Passwörter) einzugeben</span>
+            </li>
+            <li class="flex items-start gap-3 text-slate-300">
+              <svg class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Eingaben werden nicht dauerhaft für Trainingszwecke verwendet</span>
+            </li>
+          </ul>
+          
+          <div class="mt-6 flex items-center gap-2 text-sm">
+            <span class="px-2 py-1 bg-purple-500/10 text-purple-400 rounded font-medium">Rechtsgrundlage</span>
+            <span class="text-slate-400">Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung / Nutzung des Dienstes)</span>
+          </div>
+          
+          <!-- Info Box -->
+          <div class="mt-8 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <div>
+                <h4 class="font-semibold text-amber-200 mb-1">Wichtiger Hinweis</h4>
+                <p class="text-amber-100/80 text-sm leading-relaxed">
+                  JDS Business AI generiert automatisch Dokumente und Texte. Diese ersetzen keine Rechts- oder Steuerberatung durch zugelassene Fachleute.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="kontakt" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <span class="text-indigo-400 font-bold">§4</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Kontaktaufnahme per E-Mail</h2>
+            <p class="text-slate-500 text-sm">Kommunikation & Anfragen</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed">
+            Wenn Sie per E-Mail Kontakt aufnehmen, werden Ihre übermittelten Daten (Name, E-Mail-Adresse, Nachrichteninhalt) zur Bearbeitung Ihrer Anfrage gespeichert und verwendet.
+          </p>
+          <p class="text-slate-300 mt-4">
+            Diese Daten werden nicht ohne Ihre Einwilligung an Dritte weitergegeben.
+          </p>
+          <div class="mt-6 flex items-center gap-2 text-sm">
+            <span class="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded font-medium">Rechtsgrundlage</span>
+            <span class="text-slate-400">Art. 6 Abs. 1 lit. b und f DSGVO</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="hosting" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <span class="text-indigo-400 font-bold">§5</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Hosting & technischer Betrieb</h2>
+            <p class="text-slate-500 text-sm">Infrastruktur & Auftragsverarbeitung</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed">
+            Diese Website und die dahinterliegenden Dienste werden bei einem Hosting-Anbieter in der EU / dem EWR betrieben. Es wird ein Auftragsverarbeitungsvertrag (AVV) gemäß <strong class="text-white">Art. 28 DSGVO</strong> mit dem Hosting-Dienstleister geschlossen.
+          </p>
+          <p class="text-slate-300 mt-4">
+            Eine Übermittlung von personenbezogenen Daten in Drittstaaten (außerhalb der EU/EWR) findet nur auf Basis geeigneter Garantien (z. B. Standardvertragsklauseln) statt.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="cookies" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <span class="text-indigo-400 font-bold">§6</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Cookies</h2>
+            <p class="text-slate-500 text-sm">Technisch notwendige Cookies</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed">
+            Diese Website verwendet technisch notwendige Cookies, die für den Betrieb der Anwendung erforderlich sind (z. B. Session-Cookies). Diese bedürfen keiner vorherigen Einwilligung.
+          </p>
+          <p class="text-slate-300 mt-4">
+            Analyse- oder Tracking-Cookies werden derzeit <strong class="text-white">nicht</strong> eingesetzt. Sollte dies in Zukunft geändert werden, wird die Datenschutzerklärung entsprechend aktualisiert und eine Einwilligung eingeholt.
+          </p>
+          <div class="mt-6 flex items-center gap-2 text-sm">
+            <span class="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded font-medium">Rechtsgrundlage</span>
+            <span class="text-slate-400">Art. 6 Abs. 1 lit. f DSGVO</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="rechte" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <span class="text-emerald-400 font-bold">§7</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Ihre Rechte als betroffene Person</h2>
+            <p class="text-slate-500 text-sm">DSGVO-Rechte</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed mb-6">
+            Gemäß DSGVO stehen Ihnen folgende Rechte zu. Anfragen richten Sie bitte an <a href="mailto:info@joel-digitals.com" class="text-indigo-400 hover:text-indigo-300 transition-colors">info@joel-digitals.com</a>:
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors group">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Art. 15</span>
+                <h4 class="font-semibold text-white group-hover:text-indigo-400 transition-colors">Auskunft</h4>
+              </div>
+              <p class="text-sm text-slate-400">Recht auf Auskunft über gespeicherte Daten</p>
+            </div>
+            
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors group">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Art. 16</span>
+                <h4 class="font-semibold text-white group-hover:text-indigo-400 transition-colors">Berichtigung</h4>
+              </div>
+              <p class="text-sm text-slate-400">Recht auf Korrektur unrichtiger Daten</p>
+            </div>
+            
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors group">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Art. 17</span>
+                <h4 class="font-semibold text-white group-hover:text-indigo-400 transition-colors">Löschung</h4>
+              </div>
+              <p class="text-sm text-slate-400">Recht auf Löschung ("Recht auf Vergessenwerden")</p>
+            </div>
+            
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors group">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Art. 18</span>
+                <h4 class="font-semibold text-white group-hover:text-indigo-400 transition-colors">Einschränkung</h4>
+              </div>
+              <p class="text-sm text-slate-400">Recht auf Einschränkung der Verarbeitung</p>
+            </div>
+            
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors group">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Art. 20</span>
+                <h4 class="font-semibold text-white group-hover:text-indigo-400 transition-colors">Datenübertragbarkeit</h4>
+              </div>
+              <p class="text-sm text-slate-400">Recht auf Übertragung Ihrer Daten</p>
+            </div>
+            
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors group">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Art. 21</span>
+                <h4 class="font-semibold text-white group-hover:text-indigo-400 transition-colors">Widerspruch</h4>
+              </div>
+              <p class="text-sm text-slate-400">Recht auf Widerspruch gegen Verarbeitung</p>
+            </div>
+          </div>
+          
+          <div class="mt-6 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <p class="text-slate-300 text-sm">
+              Sofern die Verarbeitung Ihrer Daten auf einer <strong class="text-white">Einwilligung</strong> basiert (Art. 6 Abs. 1 lit. a DSGVO), können Sie diese jederzeit mit Wirkung für die Zukunft widerrufen.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="beschwerde" class="scroll-mt-24">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+            <span class="text-rose-400 font-bold">§8</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">Beschwerderecht bei der Aufsichtsbehörde</h2>
+            <p class="text-slate-500 text-sm">Ihr Recht auf Beschwerde</p>
+          </div>
+        </div>
+        
+        <div class="prose prose-invert prose-slate max-w-none">
+          <p class="text-slate-300 leading-relaxed">
+            Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. Zuständig ist in der Regel die Behörde am Wohnort oder Sitz des Verantwortlichen:
+          </p>
+          
+          <div class="mt-6 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 md:p-8">
+            <div class="space-y-4">
+              <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider w-32">Behörde</span>
+                <span class="text-slate-200">Bundesbeauftragter für den Datenschutz und die Informationsfreiheit (BfDI)</span>
+              </div>
+              <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider w-32">Adresse</span>
+                <span class="text-slate-200">Graurheindorfer Str. 153, 53117 Bonn</span>
+              </div>
+              <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider w-32">Website</span>
+                <a href="https://www.bfdi.bund.de" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 transition-colors inline-flex items-center gap-1">
+                  www.bfdi.bund.de
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Final Info Box -->
+          <div class="mt-8 bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white mb-2">Geltungsbereich</h4>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                  Diese Datenschutzerklärung gilt für <strong class="text-indigo-400">JDS Business AI</strong>, ein Produkt von 
+                  <a href="https://www.joel-digitals.de" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 transition-colors">Joel Digitals</a>.
+                  Bei Fragen zum Datenschutz wenden Sie sich bitte an <strong class="text-white">info@joel-digitals.com</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
