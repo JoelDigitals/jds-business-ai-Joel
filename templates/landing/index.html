@@ -1,0 +1,775 @@
+{% extends "base/base.html" %}
+{% block title %}JDS Business AI — Die KI-Beratung für Gründer & Unternehmer{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Typografie ─────────────────────────────── */
+.font-display { font-family: 'Syne', sans-serif; }
+.font-body    { font-family: 'DM Sans', sans-serif; }
+
+/* ── Hintergrund-Mesh ───────────────────────── */
+.hero-mesh {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%,   rgba(79,70,229,.22) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 90% 70%,  rgba(124,58,237,.12) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 30% at 10% 80%,  rgba(16,185,129,.07) 0%, transparent 50%),
+    #020617;
+}
+
+/* ── Animationen ────────────────────────────── */
+@keyframes rise    { from { opacity:0; transform:translateY(28px);} to { opacity:1; transform:translateY(0);} }
+@keyframes pop     { from { opacity:0; transform:scale(.92);      } to { opacity:1; transform:scale(1);     } }
+@keyframes drift   { 0%,100% { transform:translateY(0);  } 50% { transform:translateY(-12px); } }
+@keyframes scan    { 0% { transform:translateY(-100%); } 100% { transform:translateY(400%); } }
+@keyframes ticker  { 0%   { transform:translateX(0);    } 100% { transform:translateX(-50%);  } }
+@keyframes glow-pulse { 0%,100% { opacity:.5; } 50% { opacity:1; } }
+
+.anim-rise  { animation: rise .65s cubic-bezier(.22,1,.36,1) both; }
+.anim-pop   { animation: pop  .55s cubic-bezier(.22,1,.36,1) both; }
+.anim-drift { animation: drift 5s ease-in-out infinite; }
+
+.d1 { animation-delay:.08s; }
+.d2 { animation-delay:.18s; }
+.d3 { animation-delay:.30s; }
+.d4 { animation-delay:.44s; }
+.d5 { animation-delay:.60s; }
+
+/* ── Reveal on scroll ───────────────────────── */
+.reveal { opacity:0; transform:translateY(24px); transition:opacity .55s ease, transform .55s ease; }
+.reveal.on { opacity:1; transform:none; }
+.reveal.d2 { transition-delay:.12s; }
+.reveal.d3 { transition-delay:.22s; }
+.reveal.d4 { transition-delay:.34s; }
+
+/* ── Cards ──────────────────────────────────── */
+.feat-card {
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.feat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 48px rgba(79,70,229,.15);
+}
+
+/* ── Pricing glow ───────────────────────────── */
+.plan-pro-wrap {
+  background: linear-gradient(160deg, rgba(79,70,229,.25) 0%, rgba(124,58,237,.15) 100%);
+  border: 1.5px solid rgba(99,102,241,.55);
+  box-shadow: 0 0 0 1px rgba(99,102,241,.15), 0 20px 60px rgba(79,70,229,.2);
+}
+
+/* ── Terminal / Code ────────────────────────── */
+.terminal {
+  background: #060d1f;
+  border: 1px solid #1e2d4a;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: .8rem;
+  line-height: 1.7;
+  position:relative;
+  overflow:hidden;
+}
+.terminal::after {
+  content:'';
+  position:absolute; inset:0; left:-100%;
+  background: linear-gradient(105deg, transparent 40%, rgba(99,102,241,.06) 50%, transparent 60%);
+  animation: scan 3.5s ease-in-out infinite;
+  pointer-events:none;
+}
+.t-kw { color:#818cf8; }
+.t-str { color:#34d399; }
+.t-val { color:#fbbf24; }
+.t-cmt { color:#475569; }
+
+/* ── Ticker ─────────────────────────────────── */
+.ticker-track { display:flex; width:max-content; animation:ticker 30s linear infinite; }
+.ticker-track:hover { animation-play-state:paused; }
+
+/* ── FAQ ────────────────────────────────────── */
+.faq-body { max-height:0; overflow:hidden; transition:max-height .38s cubic-bezier(.4,0,.2,1); }
+.faq-body.open { max-height:320px; }
+.faq-chevron { transition:transform .3s ease; }
+.faq-chevron.open { transform:rotate(180deg); }
+
+/* ── Chat bubble animation ──────────────────── */
+.chat-msg { opacity:0; transform:translateY(6px); transition:opacity .4s ease, transform .4s ease; }
+.chat-msg.show { opacity:1; transform:none; }
+
+/* ── Noise overlay ──────────────────────────── */
+.noise::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 180px;
+  opacity:.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="font-body">
+
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════ -->
+<section class="hero-mesh noise relative min-h-screen flex items-center overflow-hidden">
+  <!-- Deko-Orbs -->
+  <div class="absolute top-32 right-16 w-64 h-64 rounded-full bg-indigo-500/6 blur-3xl pointer-events-none"></div>
+  <div class="absolute bottom-16 left-8 w-96 h-96 rounded-full bg-violet-600/5 blur-3xl pointer-events-none"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
+    <div class="grid lg:grid-cols-[1fr_480px] gap-20 items-center">
+
+      <!-- TEXT COLUMN -->
+      <div>
+        <!-- Pill -->
+        <div class="anim-rise inline-flex items-center gap-2.5 bg-slate-900/80 border border-indigo-800/40 rounded-full px-4 py-2 mb-9 text-xs text-indigo-300 font-medium tracking-wide">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+          </span>
+          100 % lokal &nbsp;·&nbsp; DSGVO-konform &nbsp;·&nbsp; Keine OpenAI-Kosten
+        </div>
+
+        <!-- Headline -->
+        <h1 class="font-display anim-rise d1 text-[clamp(2.6rem,6vw,4.5rem)] font-extrabold text-white leading-[1.05] mb-7 tracking-tight">
+          Die KI die dein<br>
+          <span class="gradient-text">Business aufbaut</span>
+        </h1>
+
+        <p class="anim-rise d2 text-slate-400 text-lg leading-relaxed max-w-lg mb-11">
+          Von der Gründungsidee über den Businessplan bis zur rechtlichen Absicherung —
+          JDS Business AI denkt mit, antwortet präzise und kostet dich nichts.
+        </p>
+
+        <!-- CTAs -->
+        <div class="anim-rise d3 flex flex-wrap gap-3 mb-14">
+          <button onclick="openModal('registerModal')"
+            class="group relative bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/40 overflow-hidden">
+            <span class="relative z-10">Kostenlos starten →</span>
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+          <a href="/api/docs/" class="flex items-center gap-2 border border-slate-700 hover:border-indigo-600/60 text-slate-300 hover:text-white font-medium px-7 py-3.5 rounded-xl transition-all duration-200 hover:bg-slate-800/40 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            API Docs
+          </a>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="anim-rise d4 flex flex-wrap gap-10">
+          {% for stat in hero_stats %}{% empty %}
+          <div class="text-center">
+            <div class="font-display text-3xl font-extrabold text-white">0 €</div>
+            <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">Einstieg</div>
+          </div>
+          <div class="w-px bg-slate-800 self-stretch"></div>
+          <div class="text-center">
+            <div class="font-display text-3xl font-extrabold text-white">100 %</div>
+            <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">Lokal generiert</div>
+          </div>
+          <div class="w-px bg-slate-800 self-stretch"></div>
+          <div class="text-center">
+            <div class="font-display text-3xl font-extrabold text-white">7+</div>
+            <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">Module</div>
+          </div>
+          <div class="w-px bg-slate-800 self-stretch"></div>
+          <div class="text-center">
+            <div class="font-display text-3xl font-extrabold text-white">REST</div>
+            <div class="text-xs text-slate-500 mt-1 uppercase tracking-wider">Developer API</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div><!-- /TEXT COLUMN -->
+
+      <!-- CHAT PREVIEW COLUMN -->
+      <div class="anim-pop d3 anim-drift hidden lg:block">
+        <div class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+
+          <!-- Fenster-Bar -->
+          <div class="flex items-center gap-2 px-5 py-3.5 border-b border-slate-800/80 bg-slate-950/60">
+            <div class="w-3 h-3 rounded-full bg-red-500/60"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500/60"></div>
+            <div class="w-3 h-3 rounded-full bg-emerald-500/60"></div>
+            <div class="flex items-center gap-2 ml-3">
+              <div class="w-5 h-5 rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                <span class="text-white text-xs font-bold">J</span>
+              </div>
+              <span class="text-slate-400 text-xs font-medium">JDS Business AI</span>
+            </div>
+            <div class="ml-auto flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full" style="animation:glow-pulse 2s infinite"></span>
+              <span class="text-xs text-emerald-400">Online</span>
+            </div>
+          </div>
+
+          <!-- Chat-Body -->
+          <div class="p-5 space-y-4" id="heroChat">
+            <div class="chat-msg flex justify-end">
+              <div class="chat-bubble-user text-white text-sm px-4 py-3 rounded-2xl rounded-tr-sm max-w-[82%] leading-relaxed">
+                Wie gründe ich eine GmbH?
+              </div>
+            </div>
+            <div class="chat-msg flex gap-2.5">
+              <div class="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-0.5">
+                <span class="text-xs text-white font-bold">J</span>
+              </div>
+              <div class="chat-bubble-ai text-slate-200 text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[82%] leading-relaxed">
+                <p class="font-semibold text-white mb-2">GmbH in 5 Schritten:</p>
+                <p>1️⃣ Gesellschaftsvertrag (Notar) <span class="text-slate-400">~600–1.500 €</span></p>
+                <p>2️⃣ Stammkapital einzahlen <span class="text-slate-400">min. 25.000 €</span></p>
+                <p>3️⃣ Handelsregistereintrag <span class="text-slate-400">~300 €</span></p>
+                <p>4️⃣ Gewerbeanmeldung <span class="text-slate-400">20–65 €</span></p>
+                <p>5️⃣ Fragebogen an Finanzamt</p>
+                <p class="mt-2 text-xs text-indigo-400">⏱ Dauer: 4–8 Wochen · Gesamt ca. 2.000–3.000 €</p>
+              </div>
+            </div>
+            <div class="chat-msg flex justify-end">
+              <div class="chat-bubble-user text-white text-sm px-4 py-3 rounded-2xl rounded-tr-sm max-w-[82%]">
+                GmbH oder UG — was ist besser?
+              </div>
+            </div>
+            <div class="chat-msg flex gap-2.5">
+              <div class="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-0.5">
+                <span class="text-xs text-white font-bold">J</span>
+              </div>
+              <div class="chat-bubble-ai text-slate-200 text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[82%]">
+                <p class="font-semibold text-white mb-1">Schnellvergleich:</p>
+                <p>🔵 <strong>UG</strong> — ab 1 €, perfekt zum Starten</p>
+                <p>🟣 <strong>GmbH</strong> — ab 25.000 €, mehr Seriosität</p>
+                <p class="mt-2 text-xs text-slate-400">💡 Tipp: UG gründen → Gewinne ansparen → GmbH</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input-Bar -->
+          <div class="px-5 py-4 border-t border-slate-800/80 bg-slate-950/40">
+            <div class="flex items-center gap-3 bg-slate-800/80 rounded-xl px-4 py-2.5">
+              <input type="text" placeholder="Deine Business-Frage…" disabled
+                class="flex-1 bg-transparent text-xs text-slate-400 placeholder-slate-600 outline-none cursor-default">
+              <button onclick="openModal('registerModal')"
+                class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap font-medium">
+                Gratis testen
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-600 mt-3 flex items-center justify-center gap-2">
+          <svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Lokale KI · kein OpenAI · DSGVO-konform
+        </p>
+      </div><!-- /CHAT COLUMN -->
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     TICKER
+═══════════════════════════════════════════════ -->
+<div class="border-y border-slate-800/60 bg-slate-950 py-3.5 overflow-hidden select-none">
+  <div class="ticker-track">
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> GmbH gründen</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Businessplan</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Pitch Deck</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Impressum</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> DSGVO</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Finanzplan</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> KfW-Förderung</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> SWOT-Analyse</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Marktanalyse</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Break-Even</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Executive Summary</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> NDA</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Arbeitsvertrag</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> UG vs GmbH</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Steuern</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> GmbH gründen</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Businessplan</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Pitch Deck</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Impressum</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> DSGVO</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Finanzplan</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> KfW-Förderung</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> SWOT-Analyse</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Marktanalyse</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Break-Even</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Executive Summary</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> NDA</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Arbeitsvertrag</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> UG vs GmbH</span>
+    <span class="flex items-center gap-2 text-xs text-slate-500 px-6 whitespace-nowrap"><span class="text-indigo-600">◆</span> Steuern</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     HOW IT WORKS
+═══════════════════════════════════════════════ -->
+<section class="py-28 bg-slate-950">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-18 reveal">
+      <p class="text-xs uppercase tracking-widest text-indigo-400 font-semibold mb-3">So funktioniert's</p>
+      <h2 class="font-display text-4xl font-extrabold text-white">In 3 Schritten zur KI-Beratung</h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 mt-16">
+      <div class="reveal relative">
+        <div class="absolute -top-5 -left-2 font-display text-8xl font-extrabold text-slate-800/60 leading-none select-none">01</div>
+        <div class="relative bg-slate-900/60 border border-slate-800 rounded-2xl p-7 hover:border-indigo-700/40 transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-indigo-950 border border-indigo-800/50 flex items-center justify-center mb-5 text-2xl">📝</div>
+          <h3 class="font-display font-bold text-white text-lg mb-3">Registrieren</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">30-Sekunden-Signup — keine Kreditkarte, keine Fangfragen. DSGVO-Einwilligung inklusive.</p>
+        </div>
+      </div>
+      <div class="reveal d2 relative">
+        <div class="absolute -top-5 -left-2 font-display text-8xl font-extrabold text-slate-800/60 leading-none select-none">02</div>
+        <div class="relative bg-slate-900/60 border border-slate-800 rounded-2xl p-7 hover:border-violet-700/40 transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-violet-950 border border-violet-800/50 flex items-center justify-center mb-5 text-2xl">💬</div>
+          <h3 class="font-display font-bold text-white text-lg mb-3">Frage stellen</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Schreib deine Business-Frage. Die KI erkennt automatisch das Thema und antwortet präzise auf Deutsch.</p>
+        </div>
+      </div>
+      <div class="reveal d3 relative">
+        <div class="absolute -top-5 -left-2 font-display text-8xl font-extrabold text-slate-800/60 leading-none select-none">03</div>
+        <div class="relative bg-slate-900/60 border border-slate-800 rounded-2xl p-7 hover:border-emerald-700/40 transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-emerald-950 border border-emerald-800/50 flex items-center justify-center mb-5 text-2xl">📄</div>
+          <h3 class="font-display font-bold text-white text-lg mb-3">Dokument exportieren</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Businessplan, Checkliste, Pitch Deck — als strukturiertes Dokument speichern und weiterbearbeiten.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     FEATURES
+═══════════════════════════════════════════════ -->
+<section class="py-28 bg-gradient-to-b from-slate-950 to-slate-900/80">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-16 reveal">
+      <p class="text-xs uppercase tracking-widest text-indigo-400 font-semibold mb-3">Features</p>
+      <h2 class="font-display text-4xl font-extrabold text-white mb-4">Alles was Gründer brauchen</h2>
+      <p class="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">Spezialisiertes deutsches Business-Wissen. Lokal. Kostenlos. Keine OpenAI-Abhängigkeit.</p>
+    </div>
+
+    <!-- 3×2 Feature-Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <div class="feat-card reveal bg-slate-900 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-7">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-3xl">🏢</span>
+          <span class="text-xs text-indigo-400 bg-indigo-950/60 border border-indigo-800/30 px-2.5 py-1 rounded-full font-medium">Gründung</span>
+        </div>
+        <h3 class="font-display font-bold text-white text-lg mb-3">Unternehmensgründung</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">GmbH, UG, Einzelunternehmen, GbR — vollständige Anleitungen mit Kosten, Zeitplänen und Download-Checklisten.</p>
+        <div class="text-xs text-slate-600 font-medium">Notar · Handelsregister · Gewerbeamt</div>
+      </div>
+
+      <div class="feat-card reveal d2 bg-slate-900 border border-slate-800 hover:border-violet-500/40 rounded-2xl p-7">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-3xl">📋</span>
+          <span class="text-xs text-violet-400 bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-full font-medium">Planung</span>
+        </div>
+        <h3 class="font-display font-bold text-white text-lg mb-3">Businessplanung</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">Businesspläne, Executive Summaries, Pitch Decks, Marktanalysen — investorenbereit generiert.</p>
+        <div class="text-xs text-slate-600 font-medium">SWOT · TAM/SAM/SOM · Finanzplan</div>
+      </div>
+
+      <div class="feat-card reveal d3 bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-7">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-3xl">⚖️</span>
+          <span class="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-800/30 px-2.5 py-1 rounded-full font-medium">Recht</span>
+        </div>
+        <h3 class="font-display font-bold text-white text-lg mb-3">Rechtliche Unterstützung</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">Impressum, DSGVO, AGB, Arbeitsverträge, NDAs — klar und verständlich mit Anwaltshinweis.</p>
+        <div class="text-xs text-slate-600 font-medium">§ 5 TMG · Art. 13 DSGVO · GmbHG</div>
+      </div>
+
+      <div class="feat-card reveal bg-slate-900 border border-slate-800 hover:border-amber-500/30 rounded-2xl p-7">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-3xl">💰</span>
+          <span class="text-xs text-amber-400 bg-amber-950/60 border border-amber-800/30 px-2.5 py-1 rounded-full font-medium">Finanzen</span>
+        </div>
+        <h3 class="font-display font-bold text-white text-lg mb-3">Finanzplanung</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">Break-Even, Cashflow, KfW & BAFA Förderprogramme, Finanzplan-Template — solide Grundlage von Tag 1.</p>
+        <div class="text-xs text-slate-600 font-medium">KfW · BAFA · Crowdfunding</div>
+      </div>
+
+      <div class="feat-card reveal d2 bg-slate-900 border border-slate-800 hover:border-sky-500/40 rounded-2xl p-7">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-3xl">🔌</span>
+          <span class="text-xs text-sky-400 bg-sky-950/60 border border-sky-800/30 px-2.5 py-1 rounded-full font-medium">API</span>
+        </div>
+        <h3 class="font-display font-bold text-white text-lg mb-3">Developer API</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">REST API mit JWT-Auth & API-Key. OpenAPI/Swagger. Integriere JDS Business AI in deine eigene Applikation.</p>
+        <div class="text-xs text-slate-600 font-medium">REST · JWT · OpenAPI 3.0</div>
+      </div>
+
+      <div class="feat-card reveal d3 bg-slate-900 border border-slate-800 hover:border-rose-500/30 rounded-2xl p-7">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-3xl">🛡️</span>
+          <span class="text-xs text-rose-400 bg-rose-950/60 border border-rose-800/30 px-2.5 py-1 rounded-full font-medium">DSGVO</span>
+        </div>
+        <h3 class="font-display font-bold text-white text-lg mb-3">100 % DSGVO-konform</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">KI läuft lokal — kein Datentransfer zu OpenAI. Datenexport (Art. 20), Löschrecht (Art. 17), Audit-Log.</p>
+        <div class="text-xs text-slate-600 font-medium">Art. 17 · Art. 20 · Art. 6 DSGVO</div>
+      </div>
+
+    </div>
+
+    <!-- API Code-Snippet -->
+    <div class="mt-12 reveal">
+      <div class="terminal rounded-2xl overflow-hidden max-w-2xl mx-auto">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-slate-800/80 bg-slate-950">
+          <div class="flex gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-slate-700"></div>
+            <div class="w-3 h-3 rounded-full bg-slate-700"></div>
+            <div class="w-3 h-3 rounded-full bg-slate-700"></div>
+          </div>
+          <span class="text-xs text-slate-500">POST /api/v1/chat/</span>
+          <span class="text-xs text-indigo-400 bg-indigo-950/50 px-2 py-0.5 rounded">Pro &amp; Business</span>
+        </div>
+        <div class="p-5 overflow-x-auto">
+<pre><code><span class="t-cmt"># Chat über Developer API</span>
+curl -X POST https://your-domain.de/api/v1/chat/ \
+  -H <span class="t-str">"X-API-Key: jds_abc123..."</span> \
+  -d <span class="t-str">'{"message": "Wie gründe ich eine GmbH?"}'</span>
+
+<span class="t-cmt"># Antwort</span>
+{
+  <span class="t-kw">"response"</span>: <span class="t-str">"GmbH Gründung — Schritt für Schritt..."</span>,
+  <span class="t-kw">"category"</span>: <span class="t-str">"founding"</span>,
+  <span class="t-kw">"confidence"</span>: <span class="t-val">0.94</span>,
+  <span class="t-kw">"remaining_messages"</span>: <span class="t-val">487</span>
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     PRICING — Monats- & Jahrespläne
+═══════════════════════════════════════════════ -->
+<section id="pricing" class="py-28 bg-slate-950 relative overflow-hidden">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_100%,rgba(79,70,229,.08),transparent)] pointer-events-none"></div>
+  <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-10 reveal">
+      <p class="text-xs uppercase tracking-widest text-indigo-400 font-semibold mb-3">Preise</p>
+      <h2 class="font-display text-4xl font-extrabold text-white mb-4">Einfach. Transparent. Fair.</h2>
+      <p class="text-slate-400 text-sm">Starte kostenlos — ohne Kreditkarte.</p>
+    </div>
+
+    <!-- BILLING TOGGLE -->
+    <div class="flex justify-center mb-12 reveal">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-1 flex items-center gap-1">
+        <button id="btnMonthly" onclick="setBilling('monthly')"
+          class="px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white">
+          Monatlich
+        </button>
+        <button id="btnYearly" onclick="setBilling('yearly')"
+          class="px-5 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-white relative">
+          Jährlich
+          <span class="absolute -top-3 -right-2 bg-emerald-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">-20%</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+      <!-- FREE -->
+      <div class="reveal bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col">
+        <div class="flex-1">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Free</p>
+          <div class="flex items-end gap-1 mb-1">
+            <span class="font-display text-5xl font-extrabold text-white">0€</span>
+          </div>
+          <p class="text-slate-500 text-xs mb-8">Für immer kostenlos</p>
+          <ul class="space-y-3 text-sm">
+            <li class="flex gap-3 items-start"><span class="text-emerald-400 flex-shrink-0">✓</span><span class="text-slate-300">10 Nachrichten/Tag</span></li>
+            <li class="flex gap-3 items-start"><span class="text-emerald-400 flex-shrink-0">✓</span><span class="text-slate-300">500 Zeichen/Nachricht</span></li>
+            <li class="flex gap-3 items-start"><span class="text-emerald-400 flex-shrink-0">✓</span><span class="text-slate-300">2 Bild-Uploads / Tag</span></li>
+            <li class="flex gap-3 items-start"><span class="text-emerald-400 flex-shrink-0">✓</span><span class="text-slate-300">Gründungs-Grundberatung</span></li>
+            <li class="flex gap-3 items-start"><span class="text-slate-700 flex-shrink-0">✗</span><span class="text-slate-600">API-Zugang</span></li>
+            <li class="flex gap-3 items-start"><span class="text-slate-700 flex-shrink-0">✗</span><span class="text-slate-600">Dokument-Generierung</span></li>
+          </ul>
+        </div>
+        <button onclick="openModal('registerModal')"
+          class="mt-8 w-full border border-slate-700 hover:border-indigo-500 hover:bg-slate-800/50 text-white py-3 rounded-xl text-sm font-semibold transition-all">
+          Kostenlos starten
+        </button>
+      </div>
+
+      <!-- PRO -->
+      <div class="reveal d2 plan-pro-wrap rounded-2xl p-8 flex flex-col relative">
+        <div class="absolute -top-4 left-0 right-0 flex justify-center">
+          <span class="bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-bold px-5 py-1.5 rounded-full uppercase tracking-wide shadow-lg">✦ Beliebteste Wahl</span>
+        </div>
+        <div class="flex-1">
+          <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Pro</p>
+          <div class="flex items-end gap-1 mb-1">
+            <span class="font-display text-5xl font-extrabold text-white">
+              <span id="proPrice">9,99€</span>
+            </span>
+            <span class="text-slate-400 text-sm mb-1.5">/Monat</span>
+          </div>
+          <p class="text-slate-400 text-xs mb-1" id="proBilled">Monatlich abgerechnet</p>
+          <p class="text-emerald-400 text-xs mb-6 hidden" id="proSavings">Jährlich: 95,90€ — spare 24€!</p>
+          <p class="text-slate-500 text-xs mb-4">Für Gründer &amp; Freelancer</p>
+          <ul class="space-y-3 text-sm">
+            <li class="flex gap-3 items-start"><span class="text-indigo-400 flex-shrink-0">✓</span><span class="text-white">200 Nachrichten/Tag</span></li>
+            <li class="flex gap-3 items-start"><span class="text-indigo-400 flex-shrink-0">✓</span><span class="text-white">5.000 Zeichen/Msg</span></li>
+            <li class="flex gap-3 items-start"><span class="text-indigo-400 flex-shrink-0">✓</span><span class="text-white">20 Bild-Uploads / Tag</span></li>
+            <li class="flex gap-3 items-start"><span class="text-indigo-400 flex-shrink-0">✓</span><span class="text-white">API-Zugang</span></li>
+            <li class="flex gap-3 items-start"><span class="text-indigo-400 flex-shrink-0">✓</span><span class="text-white">Dokument-Generierung</span></li>
+            <li class="flex gap-3 items-start"><span class="text-indigo-400 flex-shrink-0">✓</span><span class="text-white">Rechtliche Grundmodule</span></li>
+          </ul>
+        </div>
+        <a id="proShopBtn" href="https://joel-digitals.com/shop/jds-business-ai-pro-month/"
+          target="_blank" rel="noopener"
+          class="mt-8 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-3 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5 shadow-lg shadow-indigo-900/30">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          Pro kaufen — <span id="proCtaPrice">9,99€/Monat</span>
+        </a>
+      </div>
+
+      <!-- BUSINESS -->
+      <div class="reveal d3 bg-slate-900 border border-violet-800/30 hover:border-violet-600/50 rounded-2xl p-8 flex flex-col transition-colors">
+        <div class="flex-1">
+          <p class="text-xs font-semibold uppercase tracking-widest text-violet-400 mb-4">Business</p>
+          <div class="flex items-end gap-1 mb-1">
+            <span class="font-display text-5xl font-extrabold text-white">
+              <span id="bizPrice">29,99€</span>
+            </span>
+            <span class="text-slate-400 text-sm mb-1.5">/Monat</span>
+          </div>
+          <p class="text-slate-400 text-xs mb-1" id="bizBilled">Monatlich abgerechnet</p>
+          <p class="text-emerald-400 text-xs mb-6 hidden" id="bizSavings">Jährlich: 287,90€ — spare 72€!</p>
+          <p class="text-slate-500 text-xs mb-4">Für Unternehmen &amp; Teams</p>
+          <ul class="space-y-3 text-sm">
+            <li class="flex gap-3 items-start"><span class="text-violet-400 flex-shrink-0">✓</span><span class="text-slate-300">10.000 Nachrichten/Tag</span></li>
+            <li class="flex gap-3 items-start"><span class="text-violet-400 flex-shrink-0">✓</span><span class="text-slate-300">50.000 Zeichen/Msg</span></li>
+            <li class="flex gap-3 items-start"><span class="text-violet-400 flex-shrink-0">✓</span><span class="text-slate-300">API (10.000 req/Tag)</span></li>
+            <li class="flex gap-3 items-start"><span class="text-violet-400 flex-shrink-0">✓</span><span class="text-slate-300">Alle Business-Module</span></li>
+            <li class="flex gap-3 items-start"><span class="text-violet-400 flex-shrink-0">✓</span><span class="text-slate-300">Vertragsanalyse</span></li>
+            <li class="flex gap-3 items-start"><span class="text-violet-400 flex-shrink-0">✓</span><span class="text-slate-300">Priority Support</span></li>
+          </ul>
+        </div>
+        <a id="bizShopBtn" href="https://joel-digitals.com/shop/jds-business-ai-business-month/"
+          target="_blank" rel="noopener"
+          class="mt-8 w-full flex items-center justify-center gap-2 border border-violet-700/60 hover:bg-violet-900/20 hover:border-violet-600 text-white py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          Business kaufen — <span id="bizCtaPrice">29,99€/Monat</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Code einlösen Link -->
+    <p class="text-center text-slate-500 text-sm mt-10 reveal">
+      Hast du einen Zugangscode?
+      <a href="/code/" class="text-indigo-400 hover:text-indigo-300 font-medium ml-1">Code einlösen →</a>
+    </p>
+    <p class="text-center text-slate-700 text-xs mt-3 reveal">
+      DSGVO-konform · Keine versteckten Kosten · Jederzeit kündbar
+    </p>
+  </div>
+</section>
+<script>
+var billing = 'monthly';
+function setBilling(type) {
+  billing = type;
+  var monthly = (type === 'monthly');
+  document.getElementById('btnMonthly').className = 'px-5 py-2 rounded-lg text-sm font-semibold transition-all ' + (monthly ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white');
+  document.getElementById('btnYearly').className  = 'px-5 py-2 rounded-lg text-sm font-semibold transition-all relative ' + (!monthly ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white');
+  // Pro
+  document.getElementById('proPrice').textContent    = monthly ? '9,99€'  : '7,99€';
+  document.getElementById('proCtaPrice').textContent = monthly ? '9,99€/Monat' : '7,99€/Monat';
+  document.getElementById('proBilled').textContent   = monthly ? 'Monatlich abgerechnet' : 'Jährlich abgerechnet (95,90€)';
+  document.getElementById('proSavings').classList.toggle('hidden', monthly);
+  document.getElementById('proShopBtn').href = monthly
+    ? 'https://joel-digitals.com/shop/jds-business-ai-pro-month/'
+    : 'https://joel-digitals.com/shop/jds-business-ai-pro-yearly/';
+  // Business
+  document.getElementById('bizPrice').textContent    = monthly ? '29,99€' : '23,99€';
+  document.getElementById('bizCtaPrice').textContent = monthly ? '29,99€/Monat' : '23,99€/Monat';
+  document.getElementById('bizBilled').textContent   = monthly ? 'Monatlich abgerechnet' : 'Jährlich abgerechnet (287,90€)';
+  document.getElementById('bizSavings').classList.toggle('hidden', monthly);
+  document.getElementById('bizShopBtn').href = monthly
+    ? 'https://joel-digitals.com/shop/jds-business-ai-business-month/'
+    : 'https://joel-digitals.com/shop/jds-business-ai-business-yearly/';
+}
+</script>
+
+
+<!-- ═══════════════════════════════════════════
+     FAQ
+═══════════════════════════════════════════════ -->
+<section class="py-28 bg-gradient-to-b from-slate-950 to-slate-900/70">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-14 reveal">
+      <p class="text-xs uppercase tracking-widest text-indigo-400 font-semibold mb-3">FAQ</p>
+      <h2 class="font-display text-4xl font-extrabold text-white">Häufige Fragen</h2>
+    </div>
+
+    <div class="space-y-2 reveal">
+
+      <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <button class="faq-btn w-full flex justify-between items-center px-6 py-5 text-left gap-4 hover:bg-slate-800/40 transition-colors">
+          <span class="font-medium text-white text-sm">Kostet das wirklich nichts?</span>
+          <svg class="faq-chevron w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-body"><p class="px-6 pb-5 text-slate-400 text-sm leading-relaxed">Ja. Free ist dauerhaft kostenlos — 10 Nachrichten/Tag, keine Kreditkarte. Pro kostet 9,99 €/Monat, Business 29,99 €/Monat.</p></div>
+      </div>
+
+      <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <button class="faq-btn w-full flex justify-between items-center px-6 py-5 text-left gap-4 hover:bg-slate-800/40 transition-colors">
+          <span class="font-medium text-white text-sm">Welches KI-Modell wird genutzt?</span>
+          <svg class="faq-chevron w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-body"><p class="px-6 pb-5 text-slate-400 text-sm leading-relaxed">Lokale Open-Source-Modelle via HuggingFace (DialoGPT, Flan-T5 oder Mistral-7B) — ergänzt durch eine deutsche Business-Wissensdatenbank. Keine Verbindung zu OpenAI.</p></div>
+      </div>
+
+      <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <button class="faq-btn w-full flex justify-between items-center px-6 py-5 text-left gap-4 hover:bg-slate-800/40 transition-colors">
+          <span class="font-medium text-white text-sm">Sind die Antworten rechtlich bindend?</span>
+          <svg class="faq-chevron w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-body"><p class="px-6 pb-5 text-slate-400 text-sm leading-relaxed">Nein. JDS Business AI gibt allgemeine Orientierung — kein Ersatz für Rechts-, Steuer- oder Finanzberatung. Wir weisen in jeder Antwort darauf hin.</p></div>
+      </div>
+
+      <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <button class="faq-btn w-full flex justify-between items-center px-6 py-5 text-left gap-4 hover:bg-slate-800/40 transition-colors">
+          <span class="font-medium text-white text-sm">Wie nutze ich die Developer API?</span>
+          <svg class="faq-chevron w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-body"><p class="px-6 pb-5 text-slate-400 text-sm leading-relaxed">API ist für Pro- und Business-Nutzer verfügbar. API-Key unter <code class="text-indigo-400">/api/v1/keys/create/</code> generieren, dann Header <code class="text-indigo-400">X-API-Key: jds_...</code> senden. Vollständige Doku unter <a href="/api/docs/" class="text-indigo-400 hover:underline">/api/docs/</a>.</p></div>
+      </div>
+
+      <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <button class="faq-btn w-full flex justify-between items-center px-6 py-5 text-left gap-4 hover:bg-slate-800/40 transition-colors">
+          <span class="font-medium text-white text-sm">Wie schützt ihr meine Daten (DSGVO)?</span>
+          <svg class="faq-chevron w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-body"><p class="px-6 pb-5 text-slate-400 text-sm leading-relaxed">KI läuft lokal — kein Datentransfer an Dritte. Automatische Anonymisierung nach 365 Tagen. Datenexport (Art. 20) und Löschung (Art. 17) jederzeit möglich. <a href="/datenschutz/" class="text-indigo-400 hover:underline">Datenschutzerklärung →</a></p></div>
+      </div>
+
+      <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <button class="faq-btn w-full flex justify-between items-center px-6 py-5 text-left gap-4 hover:bg-slate-800/40 transition-colors">
+          <span class="font-medium text-white text-sm">Kann ich das selbst hosten?</span>
+          <svg class="faq-chevron w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-body"><p class="px-6 pb-5 text-slate-400 text-sm leading-relaxed">Ja! Vollständiges Django-Projekt mit Docker. KI-Modell wird beim ersten Start von HuggingFace geladen (~500 MB). Alle Befehle in der <code class="text-indigo-400">setup.sh</code> im Projektordner.</p></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     CTA FINAL
+═══════════════════════════════════════════════ -->
+<section class="py-28 relative overflow-hidden bg-slate-950">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(79,70,229,.1),transparent)] pointer-events-none"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-indigo-600/5 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="relative max-w-2xl mx-auto px-4 sm:px-6 text-center reveal">
+    <div class="inline-flex items-center gap-2 text-xs text-indigo-300 bg-indigo-950/50 border border-indigo-800/40 rounded-full px-4 py-2 mb-10">
+      🚀 Kostenlos starten — in 30 Sekunden
+    </div>
+
+    <h2 class="font-display text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6">
+      Bereit dein Business<br>
+      <span class="gradient-text">intelligent aufzubauen?</span>
+    </h2>
+
+    <p class="text-slate-400 mb-10 leading-relaxed">
+      Registriere dich kostenlos und starte sofort mit {{ plans.free.messages|default:"10 Nachrichten" }} pro Tag.
+      Keine Kreditkarte. Kein Risiko. DSGVO-konform.
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+      <button onclick="openModal('registerModal')"
+        class="group bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-10 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 shadow-xl shadow-indigo-900/30 hover:shadow-indigo-900/50 overflow-hidden relative">
+        <span class="relative z-10">Jetzt kostenlos starten →</span>
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      </button>
+      <a href="/api/docs/" class="flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-medium px-8 py-4 rounded-xl text-base transition-all duration-200 hover:bg-slate-800/30">
+        API Dokumentation
+      </a>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="flex flex-wrap justify-center gap-5 text-xs text-slate-600">
+      <span class="flex items-center gap-1.5"><svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> Keine Kreditkarte</span>
+      <span class="flex items-center gap-1.5"><svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> DSGVO-konform</span>
+      <span class="flex items-center gap-1.5"><svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> Keine OpenAI-Kosten</span>
+      <span class="flex items-center gap-1.5"><svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> Self-Hostable</span>
+    </div>
+  </div>
+</section>
+
+</div><!-- /font-body -->
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+// ── Chat-Demo animieren ───────────────────────────────────
+(function() {
+  const msgs = document.querySelectorAll('#heroChat .chat-msg');
+  msgs.forEach((m, i) => {
+    setTimeout(() => m.classList.add('show'), 300 + i * 650);
+  });
+})();
+
+// ── Scroll-Reveal ─────────────────────────────────────────
+const ro = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); ro.unobserve(e.target); } });
+}, { threshold: 0.05, rootMargin: '0px 0px 60px 0px' });
+document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
+// Sofort alle bereits sichtbaren Elemente einblenden
+setTimeout(function() {
+  document.querySelectorAll('.reveal:not(.on)').forEach(function(el) {
+    var rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 100) el.classList.add('on');
+  });
+}, 100);
+
+// ── FAQ ───────────────────────────────────────────────────
+document.querySelectorAll('.faq-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item    = btn.closest('.faq-item');
+    const body    = item.querySelector('.faq-body');
+    const chevron = btn.querySelector('.faq-chevron');
+    const isOpen  = body.classList.contains('open');
+
+    // Alle schließen
+    document.querySelectorAll('.faq-body.open').forEach(b => {
+      b.classList.remove('open');
+      b.closest('.faq-item').querySelector('.faq-chevron').classList.remove('open');
+    });
+
+    if (!isOpen) {
+      body.classList.add('open');
+      chevron.classList.add('open');
+    }
+  });
+});
+
+// ── Smooth anchor scroll ──────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const t = document.querySelector(a.getAttribute('href'));
+    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+</script>
+{% endblock %}

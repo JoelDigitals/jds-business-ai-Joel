@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}JDS Business AI{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{jds:{50:'#f0f4ff',500:'#4f46e5',600:'#4338ca',900:'#1e1b4b'}},fontFamily:{sans:['Inter','system-ui','sans-serif']}}}}</script>
+<style>
+body{font-family:'Inter',sans-serif;}
+.gradient-text{background:linear-gradient(135deg,#4f46e5,#7c3aed,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.chat-bubble-user{background:linear-gradient(135deg,#4f46e5,#7c3aed);}
+.chat-bubble-ai{background:#1e293b;border:1px solid #334155;}
+.glass{backdrop-filter:blur(12px);background:rgba(255,255,255,0.05);}
+pre{white-space:pre-wrap;}
+code{background:#0f172a;padding:2px 6px;border-radius:4px;font-size:.875em;}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
+
+<!-- NAV -->
+<nav class="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <a href="/" class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+          <span class="text-white font-bold text-sm">J</span>
+        </div>
+        <span class="font-bold text-lg text-white">JDS <span class="gradient-text">Business AI</span></span>
+      </a>
+      <div class="hidden md:flex items-center space-x-6 text-sm text-slate-400">
+        <a href="/" class="hover:text-white transition-colors">Home</a>
+        <a href="/#pricing" class="hover:text-white transition-colors">Preise</a>
+        <a href="/datenschutz/" class="hover:text-white transition-colors">Datenschutz</a>
+      </div>
+      <div class="flex items-center space-x-3">
+        {% if user.is_authenticated %}
+          {% if subscription %}
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium
+            {% if subscription.plan == 'free' %}bg-slate-700 text-slate-300
+            {% elif subscription.plan == 'pro' %}bg-indigo-900 text-indigo-300
+            {% else %}bg-purple-900 text-purple-300{% endif %}">
+            {{ subscription.get_plan_display }}
+          </span>
+          {% endif %}
+          <a href="/chat/" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Chat öffnen</a>
+          <a href="/logout/" class="text-slate-500 hover:text-white text-sm transition-colors">Abmelden</a>
+        {% else %}
+          <button onclick="openModal('loginModal')" class="text-slate-300 hover:text-white text-sm transition-colors font-medium">Anmelden</button>
+          <button onclick="openModal('registerModal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Kostenlos starten</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main>{% block content %}{% endblock %}</main>
+
+<!-- FOOTER -->
+<footer class="border-t border-slate-800 mt-20 py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+      <div>
+        <h3 class="font-semibold text-white mb-3">JDS Business AI</h3>
+        <p class="text-slate-400">KI-gestützte Business-Beratung für Gründer.</p>
+      </div>
+      <div>
+        <h4 class="font-medium text-white mb-3">Produkt</h4>
+        <ul class="space-y-2 text-slate-400">
+          <li><a href="/chat/" class="hover:text-white">Chat</a></li>
+          <li><a href="/#pricing" class="hover:text-white">Preise</a></li>
+          <li><a href="/code/" class="hover:text-white">Code einlösen</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-medium text-white mb-3">Rechtliches</h4>
+        <ul class="space-y-2 text-slate-400">
+          <li><a href="/datenschutz/" class="hover:text-white">Datenschutz</a></li>
+          <li><a href="/nutzungsbedingungen/" class="hover:text-white">AGB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-medium text-white mb-3">Account</h4>
+        <ul class="space-y-2 text-slate-400">
+          {% if user.is_authenticated %}
+          <li><a href="/dashboard/" class="hover:text-white">Dashboard</a></li>
+          <li><a href="/code/" class="hover:text-white">Code einlösen</a></li>
+          <li><a href="/logout/" class="hover:text-white">Abmelden</a></li>
+          {% else %}
+          <li><button onclick="openModal('loginModal')" class="hover:text-white">Anmelden</button></li>
+          <li><button onclick="openModal('registerModal')" class="hover:text-white">Registrieren</button></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-slate-800 mt-8 pt-6 text-center text-slate-500 text-xs">
+      © 2025 JDS Business AI · DSGVO-konform · KI lokal generiert
+    </div>
+  </div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">Willkommen zurück</h2>
+      <button onclick="closeModal('loginModal')" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+    </div>
+    <div id="loginError" class="hidden mb-4 p-3 bg-red-950/50 border border-red-700/50 rounded-lg text-red-300 text-sm"></div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">E-Mail</label>
+        <input type="email" id="loginEmail" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="deine@email.de">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Passwort</label>
+        <input type="password" id="loginPassword" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="••••••••">
+      </div>
+      <button onclick="doLogin()" id="loginBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-medium transition-colors">
+        Anmelden
+      </button>
+      <p class="text-center text-slate-400 text-sm">
+        Noch kein Account?
+        <button onclick="closeModal('loginModal');openModal('registerModal')" class="text-indigo-400 hover:text-indigo-300 font-medium">Jetzt registrieren</button>
+      </p>
+      <p class="text-center">
+        <a href="/login/" class="text-slate-600 hover:text-slate-400 text-xs">Oder zur Login-Seite →</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div id="registerModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">Kostenlos starten</h2>
+      <button onclick="closeModal('registerModal')" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+    </div>
+    <div id="registerError" class="hidden mb-4 p-3 bg-red-950/50 border border-red-700/50 rounded-lg text-red-300 text-sm"></div>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Vorname</label>
+          <input type="text" id="regFirstName" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500" placeholder="Max">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Nachname</label>
+          <input type="text" id="regLastName" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500" placeholder="Mustermann">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">E-Mail</label>
+        <input type="email" id="regEmail" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500" placeholder="deine@email.de">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Passwort <span class="text-slate-500 text-xs">(mind. 8 Zeichen)</span></label>
+        <input type="password" id="regPassword" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500" placeholder="••••••••">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Passwort bestätigen</label>
+        <input type="password" id="regPassword2" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500" placeholder="••••••••">
+      </div>
+      <label class="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" id="regGdpr" class="mt-0.5 rounded border-slate-600 accent-indigo-500">
+        <span class="text-sm text-slate-300">Ich stimme der <a href="/datenschutz/" class="text-indigo-400 hover:underline">Datenschutzerklärung</a> und den <a href="/nutzungsbedingungen/" class="text-indigo-400 hover:underline">AGB</a> zu.</span>
+      </label>
+      <button onclick="doRegister()" id="registerBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-medium transition-colors">
+        Account erstellen
+      </button>
+      <p class="text-center text-slate-400 text-sm">
+        Bereits registriert?
+        <button onclick="closeModal('registerModal');openModal('loginModal')" class="text-indigo-400 hover:text-indigo-300 font-medium">Anmelden</button>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Modal ─────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){closeModal('loginModal');closeModal('registerModal');} });
+
+// ── Login ─────────────────────────────────────────────────────
+async function doLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var password = document.getElementById('loginPassword').value;
+  var errEl = document.getElementById('loginError');
+  var btn = document.getElementById('loginBtn');
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Anmelden…';
+
+  try {
+    var res = await fetch('/api/auth/ajax-login/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password}),
+    });
+    var data = await res.json();
+    if (res.ok && data.success) {
+      localStorage.setItem('jds_tokens', JSON.stringify({access: data.access, refresh: data.refresh}));
+      window.location.href = '/chat/';
+    } else {
+      errEl.textContent = data.error || 'Ungültige Anmeldedaten.';
+      errEl.classList.remove('hidden');
+    }
+  } catch(e) {
+    errEl.textContent = 'Verbindungsfehler. Bitte erneut versuchen.';
+    errEl.classList.remove('hidden');
+  }
+  btn.disabled = false; btn.textContent = 'Anmelden';
+}
+
+// Enter-Taste im Login-Modal
+['loginEmail','loginPassword'].forEach(function(id){
+  document.getElementById(id)?.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+});
+
+// ── Register ──────────────────────────────────────────────────
+async function doRegister() {
+  var errEl = document.getElementById('registerError');
+  var btn = document.getElementById('registerBtn');
+  errEl.classList.add('hidden');
+
+  var payload = {
+    email:       document.getElementById('regEmail').value.trim(),
+    first_name:  document.getElementById('regFirstName').value.trim(),
+    last_name:   document.getElementById('regLastName').value.trim(),
+    password:    document.getElementById('regPassword').value,
+    password2:   document.getElementById('regPassword2').value,
+    gdpr_consent: document.getElementById('regGdpr').checked,
+  };
+
+  if (!payload.gdpr_consent) {
+    errEl.textContent = 'Bitte akzeptiere die Datenschutzerklärung.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Account erstellen…';
+
+  try {
+    var res = await fetch('/api/auth/ajax-register/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    var data = await res.json();
+    if (res.ok && data.success) {
+      localStorage.setItem('jds_tokens', JSON.stringify({access: data.access, refresh: data.refresh}));
+      window.location.href = '/chat/';
+    } else {
+      errEl.textContent = data.error || 'Registrierung fehlgeschlagen.';
+      errEl.classList.remove('hidden');
+    }
+  } catch(e) {
+    errEl.textContent = 'Verbindungsfehler.';
+    errEl.classList.remove('hidden');
+  }
+  btn.disabled = false; btn.textContent = 'Account erstellen';
+}
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

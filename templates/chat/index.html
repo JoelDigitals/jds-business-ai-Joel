@@ -1,0 +1,874 @@
+{% extends "base/base.html" %}
+{% load i18n %}
+
+{% block title %}JDS Business AI — Chat{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Layout ─────────────────────────────────────────────────── */
+.chat-layout { height: calc(100vh - 4rem); display: flex; overflow: hidden; }
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.sidebar {
+  width: 15.5rem; min-width: 15.5rem; display: flex; flex-direction: column;
+  background: #080f1a;
+  border-right: 1px solid rgba(99,102,241,.15);
+}
+@media (max-width: 768px) { .sidebar { display: none; position: fixed; left:0; top:4rem; bottom:0; z-index:50; } }
+.sidebar-section { padding: .75rem 1rem; border-bottom: 1px solid rgba(99,102,241,.08); }
+
+/* ── Chat-Bubbles ─────────────────────────────────────────────── */
+.chat-bubble-ai {
+  background: linear-gradient(135deg, rgba(30,41,59,.95) 0%, rgba(15,23,42,.95) 100%);
+  border: 1px solid rgba(99,102,241,.18);
+  border-radius: 1.25rem 1.25rem 1.25rem .25rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.chat-bubble-user {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 1.25rem 1.25rem .25rem 1.25rem;
+  box-shadow: 0 2px 12px rgba(79,70,229,.35);
+}
+
+/* ── Markdown ─────────────────────────────────────────────────── */
+.md-content { line-height: 1.65; }
+.md-content h1 { font-size:1.15rem; font-weight:800; color:#e0e7ff; margin:1rem 0 .4rem; }
+.md-content h2 { font-size:1rem; font-weight:700; color:#a5b4fc; margin:.9rem 0 .35rem; padding-bottom:.25rem; border-bottom:1px solid rgba(99,102,241,.2); }
+.md-content h3 { font-size:.9rem; font-weight:700; color:#e2e8f0; margin:.7rem 0 .25rem; }
+.md-content h4 { font-size:.85rem; font-weight:600; color:#cbd5e1; margin:.5rem 0 .2rem; }
+.md-content p  { margin:.3rem 0; color:#cbd5e1; }
+.md-content strong { color:#f1f5f9; }
+.md-content em { color:#a5b4fc; font-style:italic; }
+.md-content code { background:rgba(15,23,42,.8); color:#67e8f9; padding:2px 6px; border-radius:5px; font-size:.78rem; font-family:'Fira Code',Consolas,monospace; border:1px solid rgba(103,232,249,.15); }
+.md-content a { color:#818cf8; text-decoration:underline; text-underline-offset:2px; }
+.md-content hr { border:none; border-top:1px solid rgba(99,102,241,.2); margin:.75rem 0; }
+.md-content ul, .md-content ol { margin:.3rem 0; }
+
+/* ── Usage Bar ─────────────────────────────────────────────────── */
+.usage-bar-fill { transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+/* ── Animations ─────────────────────────────────────────────────── */
+@keyframes tdot {
+  0%,80%,100% { transform:scale(0); opacity:.3; }
+  40% { transform:scale(1); opacity:1; }
+}
+.tdot { display:inline-block; width:6px; height:6px; background:#818cf8; border-radius:50%; }
+.tdot:nth-child(1) { animation:tdot 1.4s -0.32s infinite ease-in-out; }
+.tdot:nth-child(2) { animation:tdot 1.4s -0.16s infinite ease-in-out; }
+.tdot:nth-child(3) { animation:tdot 1.4s 0s infinite ease-in-out; }
+
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(10px) scale(.98); }
+  to   { opacity:1; transform:none; }
+}
+.msg-in { animation: msgIn .3s cubic-bezier(.34,1.56,.64,1) both; }
+
+@keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+.stream-cursor { animation: cursorBlink .7s ease infinite; }
+
+/* ── Quick Topic Buttons ─────────────────────────────────────────── */
+.quick-topic {
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all .18s ease;
+}
+.quick-topic:hover {
+  background: rgba(99,102,241,.1);
+  border-color: rgba(99,102,241,.25);
+  color: #e0e7ff !important;
+  transform: translateX(2px);
+}
+
+/* ── Conversation List ─────────────────────────────────────────── */
+.conv-item { transition: all .15s ease; border-radius: .6rem; }
+.conv-item:hover { background: rgba(99,102,241,.1); color: #e0e7ff; }
+.conv-item.active { background: rgba(99,102,241,.18); color: #a5b4fc; border: 1px solid rgba(99,102,241,.25); }
+
+/* ── Input Area ─────────────────────────────────────────────────── */
+.input-area {
+  background: rgba(15,23,42,.9);
+  border-top: 1px solid rgba(99,102,241,.12);
+  backdrop-filter: blur(10px);
+}
+.msg-input-wrap {
+  background: rgba(30,41,59,.6);
+  border: 1px solid rgba(99,102,241,.2);
+  border-radius: .875rem;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.msg-input-wrap:focus-within {
+  border-color: rgba(99,102,241,.5);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+#chatMessages::-webkit-scrollbar { width: 4px; }
+#chatMessages::-webkit-scrollbar-track { background: transparent; }
+#chatMessages::-webkit-scrollbar-thumb { background: rgba(99,102,241,.2); border-radius: 99px; }
+#chatMessages::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,.4); }
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+#toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999; display:none; }
+#toast.show { display:flex; animation:msgIn .25s ease-out; }
+
+/* ── Table styling (in md-content) ─────────────────────────────── */
+.md-content table { width:100%; border-collapse:collapse; font-size:.8rem; margin:.5rem 0; }
+.md-content table th { background:rgba(79,70,229,.25); color:#a5b4fc; padding:.4rem .75rem; text-align:left; font-weight:600; border-bottom:1px solid rgba(99,102,241,.3); }
+.md-content table td { padding:.35rem .75rem; border-bottom:1px solid rgba(30,41,59,.8); color:#cbd5e1; }
+.md-content table tr:nth-child(even) td { background:rgba(30,41,59,.4); }
+
+/* ── Thinking / Writing Indicator ───────────────────────────────── */
+@keyframes think-spin {
+  0%   { transform: rotate(0deg);   opacity: 1; }
+  50%  { transform: rotate(180deg); opacity: 0.5; }
+  100% { transform: rotate(360deg); opacity: 1; }
+}
+.think-spin { animation: think-spin 1.2s linear infinite; }
+
+@keyframes think-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+.thinking-bar { animation: think-pulse 1.5s ease-in-out infinite; }
+.thinking-bar.writing { animation: none; opacity: 1; border-color: rgba(99,102,241,.3); }
+.thinking-bar.writing .think-spin { animation: think-spin 0.6s linear infinite; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+
+<!-- ── Sidebar ───────────────────────────────────────────────── -->
+<aside class="sidebar">
+
+  <!-- Logo + Neuer Chat -->
+  <div class="p-3.5 border-b border-indigo-950/60">
+    <div class="flex items-center gap-2.5 mb-3">
+      <div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-lg shadow-indigo-900/40">J</div>
+      <div>
+        <p class="text-xs font-bold text-white leading-none">JDS Business AI</p>
+        <p class="text-[10px] text-indigo-400/70 mt-0.5">KI-Assistent für Gründer</p>
+      </div>
+    </div>
+    <button id="newChatBtn" class="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 px-3 rounded-lg text-xs font-semibold transition-all shadow-md shadow-indigo-900/30">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      Neuer Chat
+    </button>
+  </div>
+
+  <!-- Usage -->
+  <div class="px-3.5 py-3 border-b border-indigo-950/60">
+    <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800/50">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-[10px] text-slate-500 uppercase tracking-wide font-medium">{{ subscription.get_plan_display }}</span>
+        <span class="text-xs text-indigo-400 font-mono" id="msgCounter">{{ remaining_messages }}/{{ limits.messages_per_day }}</span>
+      </div>
+      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+        <div id="usageBar" class="usage-bar-fill bg-gradient-to-r from-indigo-500 to-violet-500 h-1.5 rounded-full" style="width: {% widthratio subscription.messages_today limits.messages_per_day 100 %}%"></div>
+      </div>
+      <p class="text-[10px] text-slate-600 mt-1.5">Nachrichten heute</p>
+      {% if subscription.plan == 'free' %}
+      <a href="/#pricing" class="block mt-2 text-center text-[10px] bg-indigo-950/80 hover:bg-indigo-900/60 text-indigo-400 py-1.5 rounded-lg transition-colors border border-indigo-800/30 font-medium">
+        ⚡ Auf Pro upgraden
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Schnellthemen -->
+  <div class="px-3.5 py-3 border-b border-indigo-950/60">
+    <p class="text-[10px] text-slate-600 uppercase tracking-widest mb-2 font-semibold px-1">Schnellthemen</p>
+    <div class="space-y-0.5">
+      {% for topic in quick_topics %}
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="{{ topic.text }}">
+        {{ topic.icon }} {{ topic.label }}
+      </button>
+      {% empty %}
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="Wie gründe ich eine GmbH?">🏢 GmbH gründen</button>
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="Erstelle einen Businessplan für mein Startup">📋 Businessplan erstellen</button>
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="Was ist eine SWOT-Analyse?">📊 SWOT-Analyse</button>
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="Was muss in mein Impressum?">⚖️ Impressum & DSGVO</button>
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="Welche Förderungen gibt es für Startups?">💰 Förderungen finden</button>
+      <button class="quick-topic w-full text-left text-xs text-slate-400 px-2.5 py-1.5 rounded-lg" data-msg="Wie erstelle ich einen Arbeitsvertrag?">👥 Mitarbeiter einstellen</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Letzte Chats -->
+  <div class="flex-1 overflow-y-auto px-3.5 py-3">
+    <p class="text-[10px] text-slate-600 uppercase tracking-widest mb-2 font-semibold px-1">Letzte Chats</p>
+    <div id="conversationList">
+      <p class="text-slate-700 text-xs px-1 py-2">Noch keine Chats.</p>
+    </div>
+  </div>
+
+  <!-- User -->
+  <div class="px-3.5 py-3 border-t border-indigo-950/60">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white shadow-md shadow-indigo-900/40">
+        {{ user.first_name|first|upper|default:user.email|first|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold text-slate-200 truncate leading-none">{{ user.get_full_name|default:user.email }}</p>
+        <p class="text-[10px] text-slate-500 truncate mt-0.5">{{ user.email }}</p>
+      </div>
+      <a href="/logout/" title="Abmelden" class="text-slate-600 hover:text-red-400 transition-colors p-1 rounded-md hover:bg-red-950/30">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </a>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main Chat ─────────────────────────────────────────────── -->
+<main class="flex-1 flex flex-col min-w-0 bg-slate-950">
+
+  <!-- Header -->
+  <div class="h-12 border-b border-slate-800/60 px-4 flex items-center justify-between flex-shrink-0 bg-slate-950/80 backdrop-blur-sm">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <button id="sidebarToggle" class="md:hidden text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors mr-0.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="flex items-center gap-1.5">
+        <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+        <div class="w-1.5 h-1.5 bg-emerald-400/40 rounded-full animate-pulse" style="animation-delay:.3s"></div>
+      </div>
+      <span class="text-sm text-slate-300 font-medium truncate" id="chatTitle">JDS Business AI</span>
+    </div>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span id="categoryBadge" class="hidden text-xs text-indigo-300 bg-indigo-950/60 border border-indigo-800/40 px-2 py-0.5 rounded-full font-medium"></span>
+      <button id="deleteConvBtn" onclick="deleteConversation()" title="Chat löschen" class="hidden text-slate-600 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-950/20">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div id="chatMessages" class="flex-1 overflow-y-auto px-4 sm:px-8 py-5 space-y-4"></div>
+
+  <!-- Input -->
+  <div class="flex-shrink-0 input-area px-4 sm:px-6 py-3">
+    <div id="limitWarning" class="hidden mb-2 px-3 py-2 bg-amber-950/50 border border-amber-700/40 rounded-xl text-xs text-amber-300 flex items-center gap-2">
+      <span>⚠️ Tageslimit fast erreicht.</span>
+      <a href="/#pricing" class="underline font-semibold ml-auto">Upgraden →</a>
+    </div>
+    <div id="imagePreview" class="hidden mb-2 flex items-center gap-2.5 p-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl">
+      <img id="previewImg" class="w-12 h-12 object-cover rounded-lg">
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-medium text-white truncate" id="previewName">Bild</p>
+        <p class="text-xs text-slate-500" id="previewSize"></p>
+      </div>
+      <button onclick="removeImage()" class="text-slate-500 hover:text-red-400 transition-colors p-1">✕</button>
+    </div>
+    <div class="flex items-end gap-2">
+      {% if subscription.plan != 'free' %}
+      <label class="cursor-pointer flex-shrink-0 text-slate-600 hover:text-indigo-400 transition-colors p-2 rounded-lg hover:bg-slate-800/60 mb-0.5" title="Bild anhängen">
+        <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" onchange="handleImageSelect(this)">
+        <svg class="w-4.5 h-4.5" style="width:1.1rem;height:1.1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </label>
+      {% endif %}
+      <div class="msg-input-wrap flex-1">
+        <textarea id="messageInput" rows="1"
+          class="w-full bg-transparent text-slate-100 placeholder-slate-600 px-4 py-2.5 text-sm resize-none focus:outline-none leading-relaxed"
+          style="max-height:7rem;"
+          placeholder="Stelle deine Frage… (Enter = Senden, Shift+Enter = Zeilenumbruch)"
+          maxlength="{{ limits.chars_per_message|default:500 }}"
+          onkeydown="handleKeyDown(event)"
+          oninput="onInput(this)"></textarea>
+      </div>
+      <button id="sendBtn" onclick="sendMessage()"
+        class="flex-shrink-0 bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white p-2.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 hover:shadow-indigo-900/50 hover:-translate-y-0.5 mb-0.5">
+        <svg class="w-4.5 h-4.5" style="width:1.1rem;height:1.1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="flex justify-between items-center mt-1">
+      <span class="text-[10px] text-slate-700">{{ limits.messages_per_day }} Nachrichten/Tag</span>
+      <span class="text-[10px] text-slate-700" id="charCounter">0 / {{ limits.chars_per_message|default:500 }}</span>
+    </div>
+  </div>
+</main>
+</div>
+
+<div id="toast" class="items-center gap-2.5 bg-slate-900/95 border border-red-700/40 text-red-300 px-4 py-3 rounded-xl shadow-2xl text-sm max-w-xs backdrop-blur-sm">
+  <span id="toastMsg"></span>
+  <button onclick="hideToast()" class="ml-2 text-red-500 hover:text-red-300 flex-shrink-0 text-xs">✕</button>
+</div>
+
+<script>
+'use strict';
+
+var MAX_CHARS      = parseInt('{{ limits.chars_per_message|default:500 }}', 10);
+var MESSAGES_LIMIT = parseInt('{{ limits.messages_per_day|default:10 }}', 10);
+var CSRF_TOKEN     = '{{ csrf_token }}';
+var currentConvId  = null;
+var isLoading      = false;
+var selectedImage  = null;
+var toastTimer     = null;
+
+function getCsrf() {
+  if (CSRF_TOKEN) return CSRF_TOKEN;
+  var m = document.cookie.match(/csrftoken=([^;]+)/);
+  return m ? m[1] : '';
+}
+function getJwt() {
+  try { var t = JSON.parse(localStorage.getItem('jds_tokens') || 'null'); return (t && t.access) ? t.access : null; } catch(e) { return null; }
+}
+function setJwt(a, r) { localStorage.setItem('jds_tokens', JSON.stringify({access: a, refresh: r || ''})); }
+
+function baseFetch(url, method, body, signal, extra) {
+  var h = {'X-CSRFToken': getCsrf()};
+  var jwt = getJwt();
+  if (jwt) h['Authorization'] = 'Bearer ' + jwt;
+  if (extra) Object.keys(extra).forEach(function(k){ h[k] = extra[k]; });
+  var init = {method: method || 'GET', headers: h, credentials: 'same-origin'};
+  if (body != null) init.body = body;
+  if (signal) init.signal = signal;
+  return fetch(url, init);
+}
+
+async function ensureJwt() {
+  var jwt = getJwt();
+  if (jwt) {
+    try {
+      var p = JSON.parse(atob(jwt.split('.')[1]));
+      if (p.exp * 1000 > Date.now() + 60000) return;
+    } catch(e) {}
+  }
+  try {
+    var res = await fetch('/api/auth/session-token/', {method:'GET', credentials:'same-origin'});
+    if (res.ok) { var d = await res.json(); if (d.access) setJwt(d.access, d.refresh); }
+  } catch(e) {}
+}
+
+async function tryRefresh() {
+  try {
+    var t = JSON.parse(localStorage.getItem('jds_tokens') || 'null');
+    if (!t || !t.refresh) return false;
+    var res = await fetch('/api/auth/refresh/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+      body: JSON.stringify({refresh: t.refresh}),
+      credentials: 'same-origin'
+    });
+    if (res.ok) { var d = await res.json(); if (d.access) { t.access = d.access; localStorage.setItem('jds_tokens', JSON.stringify(t)); return true; } }
+  } catch(e) {}
+  return false;
+}
+
+async function apiCall(url, method, body, signal, extra) {
+  var res = await baseFetch(url, method, body, signal, extra);
+  if (res.status === 401) {
+    var ok = await tryRefresh();
+    if (!ok) await ensureJwt();
+    res = await baseFetch(url, method, body, signal, extra);
+    if (res.status === 401) {
+      showToast('Sitzung abgelaufen — bitte neu anmelden.');
+      setTimeout(function(){ window.location.href = '/login/'; }, 2500);
+      throw new Error('AUTH_EXPIRED');
+    }
+  }
+  return res;
+}
+
+async function apiJson(url, payload, signal) {
+  return apiCall(url, 'POST', JSON.stringify(payload), signal, {'Content-Type':'application/json'});
+}
+
+// ── Markdown Renderer ─────────────────────────────────────────
+function renderMarkdown(text) {
+  if (!text) return '';
+  function xe(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function ri(s) {
+    return xe(s)
+      .replace(/\*\*(.+?)\*\*/g,'<strong class="text-white font-semibold">$1</strong>')
+      .replace(/\*(.+?)\*/g,'<em class="text-indigo-300">$1</em>')
+      .replace(/`([^`]+)`/g,'<code class="bg-slate-900 text-cyan-300 px-1 rounded text-xs font-mono">$1</code>')
+      .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" class="text-indigo-400 underline" target="_blank">$1</a>');
+  }
+
+  var lines = text.split('\n');
+  var out = '';
+  var buf = [];
+  var i = 0;
+
+  function flush() {
+    if (!buf.length) return;
+    out += '<ul class="my-2 space-y-1">' + buf.join('') + '</ul>';
+    buf = [];
+  }
+
+  // Pre-pass: render tables
+  var tableRe = /^(\|.+\|\s*\n)+/gm;
+  text = text.replace(tableRe, function(block) {
+    var rows = block.trim().split('\n').filter(function(l) { return !/^\|[\s\-:|]+\|/.test(l); });
+    if (rows.length < 2) return block;
+    function pr(l) { return l.replace(/^\||\|$/g,'').split('|').map(function(c){ return c.trim(); }); }
+    var hcells = pr(rows[0]);
+    var th = '<thead class="bg-indigo-900/60"><tr>' + hcells.map(function(h){ return '<th class="px-3 py-2 text-left text-xs font-semibold text-indigo-200">' + xe(h) + '</th>'; }).join('') + '</tr></thead>';
+    var tb = '<tbody>' + rows.slice(1).map(function(r,i){ var cs=pr(r); return '<tr class="'+(i%2?'bg-slate-800/40':'')+'">'+cs.map(function(c){ return '<td class="px-3 py-1.5 text-xs border-b border-slate-700/30">'+ri(c)+'</td>'; }).join('')+'</tr>'; }).join('') + '</tbody>';
+    return '<TABLE_BLOCK>' + JSON.stringify({h:th,b:tb}) + '</TABLE_BLOCK>\n';
+  });
+
+  lines = text.split('\n');
+
+  for (i = 0; i < lines.length; i++) {
+    var line = lines[i];
+
+    if (line.startsWith('<TABLE_BLOCK>')) {
+      flush();
+      try {
+        var d = JSON.parse(line.replace('<TABLE_BLOCK>','').replace('</TABLE_BLOCK>',''));
+        out += '<div class="overflow-x-auto my-3 rounded-lg border border-slate-700/50"><table class="w-full border-collapse text-sm">' + d.h + d.b + '</table></div>';
+      } catch(e) { out += line; }
+      continue;
+    }
+
+    // Code block
+    if (line.startsWith('```')) {
+      flush();
+      var lang = line.slice(3).trim();
+      var code = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith('```')) { code.push(lines[i]); i++; }
+      out += '<pre class="bg-slate-900 rounded-lg p-3 my-2 overflow-x-auto border border-slate-700/30"><code class="text-cyan-300 text-xs font-mono">' + xe(code.join('\n')) + '</code></pre>';
+      continue;
+    }
+
+    // Headings
+    var hm = line.match(/^(#{1,4})\s+(.+)$/);
+    if (hm) {
+      flush();
+      var lv = hm[1].length;
+      var cls = ['','text-xl font-bold text-white mt-5 mb-2','text-base font-bold text-indigo-300 mt-4 mb-2 pb-1 border-b border-slate-700/50','text-sm font-bold text-white mt-3 mb-1','text-sm font-semibold text-slate-300 mt-2'][lv];
+      out += '<h'+lv+' class="'+cls+'">'+ri(hm[2])+'</h'+lv+'>';
+      continue;
+    }
+
+    // HR
+    if (/^---+$/.test(line.trim())) { flush(); out += '<hr class="border-slate-700/50 my-3">'; continue; }
+
+    // Checkbox
+    var cbm = line.match(/^- \[([ x])\] (.+)$/);
+    if (cbm) {
+      var done = cbm[1]==='x';
+      buf.push('<li class="flex gap-2 items-start"><span class="flex-shrink-0 '+(done?'text-emerald-400':'text-slate-500')+'">'+(done?'☑':'☐')+'</span><span class="'+(done?'line-through text-slate-500':'')+'">'+ri(cbm[2])+'</span></li>');
+      continue;
+    }
+
+    // Numbered list
+    var nm = line.match(/^(\d+)\.\s+(.+)$/);
+    if (nm) { buf.push('<li class="flex gap-2 items-start"><span class="text-indigo-400 font-bold text-xs flex-shrink-0">'+nm[1]+'.</span><span>'+ri(nm[2])+'</span></li>'); continue; }
+
+    // Bullet
+    var bm = line.match(/^[-*]\s+(.+)$/);
+    if (bm) { buf.push('<li class="flex gap-2 items-start"><span class="text-indigo-400 flex-shrink-0 mt-0.5">•</span><span>'+ri(bm[1])+'</span></li>'); continue; }
+
+    // Empty line
+    if (!line.trim()) { flush(); out += '<div class="h-2"></div>'; continue; }
+
+    // Paragraph
+    flush();
+    out += '<p class="text-slate-200 text-sm leading-relaxed my-1">'+ri(line)+'</p>';
+  }
+  flush();
+  return '<div class="md-content">'+out+'</div>';
+}
+
+// ── Bubble-Hilfsfunktionen ─────────────────────────────────────
+function addMessage(role, content, meta) {
+  var isUser = role === 'user';
+  var id = 'msg_' + Date.now();
+  var inner = '';
+  if (isUser) {
+    inner = '<div class="chat-bubble-user px-4 py-3 rounded-2xl rounded-tr-sm text-white text-sm leading-relaxed max-w-[80%]">' +
+      '<p>' + String(content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p></div>';
+  } else {
+    var metaHtml = '';
+    if (meta) {
+      metaHtml = '<div class="flex items-center gap-2 mt-2 flex-wrap">';
+      if (meta.category && meta.category !== 'general') metaHtml += '<span class="text-xs text-indigo-500 px-2 py-0.5 bg-indigo-950/50 rounded">'+esc(meta.category)+'</span>';
+      if (meta.processingTime) metaHtml += '<span class="text-xs text-slate-700">'+meta.processingTime+' ms</span>';
+      if (meta.offerPdf && meta.pdfUrl) metaHtml += '<a href="'+esc(meta.pdfUrl)+'" target="_blank" class="inline-flex items-center gap-1 text-xs bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg font-medium transition-colors">&#128196; Als PDF</a>';
+      metaHtml += '</div>';
+    }
+    inner = '<div class="flex gap-2.5 max-w-[90%] xl:max-w-[78%]">' +
+      '<div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">J</div>' +
+      '<div><div class="chat-bubble-ai px-4 py-3 rounded-2xl rounded-tl-sm text-slate-200 text-sm leading-relaxed">' +
+      renderMarkdown(content) + '</div>' + metaHtml + '</div></div>';
+  }
+  var wrap = '<div id="'+id+'" class="flex '+(isUser?'justify-end':'justify-start')+' msg-in">'+inner+'</div>';
+  document.getElementById('chatMessages').insertAdjacentHTML('beforeend', wrap);
+  scrollToBottom();
+  return id;
+}
+
+function showTyping() {
+  var id = 'typing_' + Date.now();
+  document.getElementById('chatMessages').insertAdjacentHTML('beforeend',
+    '<div id="'+id+'" class="flex justify-start msg-in"><div class="flex gap-2.5">' +
+    '<div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">J</div>' +
+    '<div class="chat-bubble-ai px-4 py-3.5 rounded-2xl rounded-tl-sm"><div class="flex gap-1"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></div></div>' +
+    '</div></div>');
+  scrollToBottom();
+  return id;
+}
+function removeTyping(id) { var el=document.getElementById(id); if(el) el.remove(); }
+
+function createStreamBubble() {
+  var id = 'stream_' + Date.now();
+  document.getElementById('chatMessages').insertAdjacentHTML('beforeend',
+    '<div id="'+id+'" class="flex justify-start msg-in">' +
+    '<div class="flex gap-2.5 max-w-[90%] xl:max-w-[78%]">' +
+    '<div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">J</div>' +
+    '<div class="flex flex-col gap-1.5">' +
+    '<div class="thinking-bar flex items-center gap-2 px-3 py-1.5 bg-slate-900/60 border border-indigo-900/40 rounded-xl text-xs text-indigo-400/80">' +
+    '<svg class="w-3 h-3 think-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>' +
+    '<span class="think-text">Denke nach…</span>' +
+    '</div>' +
+    '<div class="chat-bubble-ai px-4 py-3 rounded-2xl rounded-tl-sm text-slate-200 text-sm leading-relaxed hidden">' +
+    '<span class="stream-raw whitespace-pre-wrap"></span><span class="animate-pulse text-indigo-400">&#9611;</span>' +
+    '</div>' +
+    '</div></div></div>');
+  scrollToBottom();
+  return id;
+}
+function updateStreamBubble(id, text) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  // Beim ersten Chunk: Thinking-Bar ausblenden, Bubble einblenden
+  var thinkBar = el.querySelector('.thinking-bar');
+  var bubble = el.querySelector('.chat-bubble-ai');
+  if (thinkBar && !thinkBar.classList.contains('hidden')) {
+    // Thinking-Text animieren: "Denkt..." → "Schreibt..."
+    var thinkText = thinkBar.querySelector('.think-text');
+    if (thinkText) thinkText.textContent = 'Schreibt…';
+    thinkBar.classList.add('writing');
+  }
+  if (bubble && bubble.classList.contains('hidden')) {
+    bubble.classList.remove('hidden');
+  }
+  var raw = el.querySelector('.stream-raw');
+  if (raw) raw.textContent = text;
+  scrollToBottom();
+}
+function finalizeStreamBubble(id, text, meta) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  // Thinking-Bar entfernen
+  var thinkBar = el.querySelector('.thinking-bar');
+  if (thinkBar) thinkBar.remove();
+  var bubble = el.querySelector('.chat-bubble-ai');
+  if (!bubble) return;
+  bubble.classList.remove('hidden');
+  bubble.innerHTML = renderMarkdown(text);
+  // Meta UNTER der Bubble
+  if (meta) {
+    var m = '<div class="flex items-center gap-2 mt-1.5 flex-wrap">';
+    var hasAny = false;
+    if (meta.category && meta.category !== 'general') {
+      m += '<span class="text-[10px] text-indigo-500/80 px-1.5 py-0.5 bg-indigo-950/40 rounded-md border border-indigo-900/30">'+esc(meta.category)+'</span>';
+      hasAny = true;
+    }
+    if (meta.processingTime) {
+      m += '<span class="text-[10px] text-slate-600">'+meta.processingTime+' ms</span>';
+      hasAny = true;
+    }
+    if (meta.model && meta.model !== 'rule-based') {
+      m += '<span class="text-[10px] text-slate-700">• '+esc(meta.model)+'</span>';
+    }
+    if (meta.offerPdf && meta.pdfUrl) {
+      m += '<a href="'+esc(meta.pdfUrl)+'" target="_blank" class="inline-flex items-center gap-1 text-xs bg-indigo-600/90 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg font-medium transition-colors shadow-sm">' +
+           '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' +
+           'Als PDF</a>';
+      hasAny = true;
+    }
+    m += '</div>';
+    if (hasAny) bubble.insertAdjacentHTML('afterend', m);
+  }
+  scrollToBottom();
+}
+
+// ── Streaming ─────────────────────────────────────────────────
+async function sendWithStream(message) {
+  var jwt = getJwt();
+  var headers = {'Content-Type':'application/json','X-CSRFToken':getCsrf()};
+  if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+
+  var res;
+  try {
+    res = await fetch('/chat/stream/', {
+      method: 'POST', headers: headers,
+      body: JSON.stringify({message: message, conversation_id: currentConvId || null}),
+      credentials: 'same-origin'
+    });
+  } catch(e) { await sendWithFallback(message); return; }
+
+  if (!res.ok || !res.body) { await sendWithFallback(message); return; }
+
+  var bubbleId = createStreamBubble();
+  var reader = res.body.getReader();
+  var dec = new TextDecoder();
+  var buf = '';
+  var full = '';
+  var meta = {};
+
+  try {
+    while (true) {
+      var r = await reader.read();
+      if (r.done) break;
+      buf += dec.decode(r.value, {stream: true});
+      var parts = buf.split('\n');
+      buf = parts.pop();
+      for (var j = 0; j < parts.length; j++) {
+        var ln = parts[j];
+        if (!ln.startsWith('data: ')) continue;
+        var ds = ln.slice(6).trim();
+        if (!ds) continue;
+        try {
+          var ev = JSON.parse(ds);
+          if (ev.type === 'start' && ev.conversation_id) currentConvId = ev.conversation_id;
+          else if (ev.type === 'chunk' && ev.text) { full += ev.text; updateStreamBubble(bubbleId, full); }
+          else if (ev.type === 'done') { meta = {category:ev.category, processingTime:ev.processing_time_ms, offerPdf:ev.offer_pdf, pdfUrl:ev.pdf_url}; updateUsage(ev.remaining_messages); loadConversations(); }
+          else if (ev.type === 'error') throw new Error(ev.message || 'Fehler');
+        } catch(pe) {}
+      }
+    }
+  } catch(e) { console.warn('Stream:', e); }
+
+  if (!full.trim()) { document.getElementById(bubbleId)?.remove(); await sendWithFallback(message); return; }
+  finalizeStreamBubble(bubbleId, full, meta);
+}
+
+async function sendWithFallback(message) {
+  // Normaler API-Call, dann Wort-für-Wort tippen
+  var res = await apiJson('/chat/message/', {message: message, conversation_id: currentConvId || null}, null);
+  if (res.status === 429) {
+    var d = await res.json().catch(function(){ return {}; });
+    addMessage('assistant', 'Tageslimit erreicht. ' + (d.message||'') + '\n\n[Upgraden](/#pricing)');
+    document.getElementById('limitWarning')?.classList.remove('hidden');
+    return;
+  }
+  if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.detail||e.message||'HTTP '+res.status); }
+
+  var data = await res.json();
+  currentConvId = data.conversation_id;
+  var text = data.response || '';
+  var meta = {category:data.category, processingTime:data.processing_time_ms, offerPdf:data.offer_pdf, pdfUrl:data.pdf_url};
+
+  // Wort-für-Wort Simulation
+  var bId = createStreamBubble();
+  var words = text.split(' ');
+  var shown = '';
+  for (var i = 0; i < words.length; i++) {
+    shown += (i > 0 ? ' ' : '') + words[i];
+    updateStreamBubble(bId, shown);
+    var w = words[i];
+    var delay = /[.!?]$/.test(w) ? 55 : /[,;:]$/.test(w) ? 28 : 14;
+    await new Promise(function(r){ setTimeout(r, delay); });
+  }
+  finalizeStreamBubble(bId, text, meta);
+  updateUsage(data.remaining_messages);
+  if (data.is_new_conversation) loadConversations();
+}
+
+// ── Nachricht senden ──────────────────────────────────────────
+async function sendMessage() {
+  if (isLoading) return;
+  var input = document.getElementById('messageInput');
+  var msg = input.value.trim();
+  if (!msg && !selectedImage) return;
+  if (msg.length > MAX_CHARS) { showToast('Zu lang (' + msg.length + '/' + MAX_CHARS + ')'); return; }
+
+  input.value = '';
+  input.style.height = 'auto';
+  updateCharCounter('');
+  setLoading(true);
+  addMessage('user', msg || '[Bild]');
+  var tid = showTyping();
+
+  try {
+    if (selectedImage) {
+      var fd = new FormData();
+      fd.append('message', msg || ' ');
+      if (currentConvId) fd.append('conversation_id', currentConvId);
+      fd.append('image', selectedImage);
+      removeTyping(tid);
+      var res = await apiCall('/chat/message/', 'POST', fd, null);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var d = await res.json();
+      currentConvId = d.conversation_id;
+      addMessage('assistant', d.response, {category:d.category, processingTime:d.processing_time_ms, offerPdf:d.offer_pdf, pdfUrl:d.pdf_url});
+      updateUsage(d.remaining_messages);
+    } else {
+      removeTyping(tid);
+      await sendWithStream(msg);
+    }
+  } catch(err) {
+    removeTyping(tid);
+    if (err.message !== 'AUTH_EXPIRED') addMessage('assistant', 'Fehler: ' + (err.message || 'Unbekannt'));
+  } finally {
+    setLoading(false);
+    selectedImage = null;
+    var ii = document.getElementById('imageInput');
+    if (ii) ii.value = '';
+    document.getElementById('imagePreview').classList.add('hidden');
+    document.getElementById('messageInput').focus();
+  }
+}
+
+// ── Konversationen ────────────────────────────────────────────
+async function loadConversations() {
+  try {
+    var res = await apiCall('/chat/conversations/?ordering=-updated_at', 'GET', null, null);
+    if (!res.ok) return;
+    var data = await res.json();
+    var items = data.results || data || [];
+    var listEl = document.getElementById('conversationList');
+    if (!items.length) { listEl.innerHTML = '<p class="text-slate-700 text-xs">Noch keine Chats.</p>'; return; }
+    listEl.innerHTML = items.slice(0,15).map(function(cv) {
+      var active = cv.id === currentConvId;
+      return '<button onclick="loadConv(\'' + esc(cv.id) + '\')" ' +
+        'class="conv-item w-full text-left text-xs px-2.5 py-1.5 flex items-center gap-2 mb-0.5 ' + (active ? 'active' : 'text-slate-500') + '">' +
+        '<svg class="w-3 h-3 flex-shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>' +
+        '<span class="truncate">' + esc(cv.title || 'Chat') + '</span></button>';
+    }).join('');
+  } catch(e) { if (e.message !== 'AUTH_EXPIRED') console.warn('convList:', e.message); }
+}
+
+async function loadConv(id) {
+  currentConvId = id;
+  document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('chatTitle').textContent = 'Lade...';
+  document.getElementById('deleteConvBtn').classList.remove('hidden');
+  try {
+    var res = await apiCall('/chat/conversations/' + id + '/messages/', 'GET', null, null);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var d = await res.json();
+    var msgs = d.results || d || [];
+    if (!msgs.length) addWelcomeMessage();
+    else msgs.forEach(function(m) { addMessage(m.role, m.content); });
+    var cr = await apiCall('/chat/conversations/' + id + '/', 'GET', null, null);
+    if (cr.ok) { var cv = await cr.json(); document.getElementById('chatTitle').textContent = cv.title || 'Chat'; }
+    loadConversations();
+  } catch(e) { if (e.message !== 'AUTH_EXPIRED') addMessage('assistant', 'Konversation konnte nicht geladen werden.'); }
+}
+
+async function deleteConversation() {
+  if (!currentConvId || !confirm('Chat wirklich loeschen?')) return;
+  try {
+    await apiCall('/chat/conversations/' + currentConvId + '/', 'DELETE', null, null);
+    currentConvId = null;
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('chatTitle').textContent = 'JDS Business AI';
+    document.getElementById('deleteConvBtn').classList.add('hidden');
+    document.getElementById('categoryBadge').classList.add('hidden');
+    addWelcomeMessage();
+    loadConversations();
+  } catch(e) { showToast('Fehler beim Loeschen'); }
+}
+
+function addWelcomeMessage() {
+  addMessage('assistant',
+    '**Hallo! Ich bin JDS Business AI.** Womit kann ich dir heute helfen?\n\n' +
+    'Ich helfe dir bei:\n' +
+    '- **Businessplan** erstellen (inkl. PDF-Download)\n' +
+    '- **GmbH / UG** gruenden Schritt fuer Schritt\n' +
+    '- **Foerderungen** finden (KfW, BAFA, EXIST)\n' +
+    '- **Impressum & DSGVO** richtig umsetzen\n' +
+    '- **Marketing & Strategie** planen\n\n' +
+    'Stelle deine Frage oder waehle links ein Schnellthema!'
+  );
+}
+
+// ── Input ─────────────────────────────────────────────────────
+function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function onInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+  updateCharCounter(el.value);
+}
+function updateCharCounter(v) {
+  var el = document.getElementById('charCounter');
+  if (!el) return;
+  el.textContent = v.length + ' / ' + MAX_CHARS;
+  el.style.color = v.length > MAX_CHARS * 0.9 ? '#f97316' : '';
+}
+function handleImageSelect(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 10*1024*1024) { showToast('Bild zu gross (max 10MB)'); input.value=''; return; }
+  if (['image/jpeg','image/png','image/webp','image/gif'].indexOf(file.type) === -1) { showToast('Ungueltiger Dateityp'); input.value=''; return; }
+  selectedImage = file;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('previewName').textContent = file.name;
+    document.getElementById('previewSize').textContent = (file.size/1024).toFixed(0)+' KB';
+    document.getElementById('imagePreview').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+function removeImage() {
+  selectedImage = null;
+  var ii = document.getElementById('imageInput');
+  if (ii) ii.value = '';
+  document.getElementById('imagePreview').classList.add('hidden');
+}
+
+// ── UI ────────────────────────────────────────────────────────
+function setLoading(v) { isLoading = v; document.getElementById('sendBtn').disabled = v; }
+function scrollToBottom() { var el = document.getElementById('chatMessages'); if(el) el.scrollTop = el.scrollHeight; }
+function updateUsage(rem) {
+  if (rem == null) return;
+  var used = MESSAGES_LIMIT - rem;
+  var ctr = document.getElementById('msgCounter');
+  if (ctr) ctr.textContent = rem + '/' + MESSAGES_LIMIT;
+  var pct = Math.min(100, Math.round(used / MESSAGES_LIMIT * 100));
+  var bar = document.getElementById('usageBar');
+  if (bar) { bar.style.width = pct + '%'; bar.className = 'usage-bar-fill h-1 rounded-full ' + (pct > 85 ? 'bg-amber-500' : 'bg-indigo-500'); }
+  if (rem < MESSAGES_LIMIT * 0.15) { var lw = document.getElementById('limitWarning'); if(lw) lw.classList.remove('hidden'); }
+}
+function showToast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 4000);
+}
+function hideToast() { document.getElementById('toast').classList.remove('show'); }
+function esc(s) { return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+// ── Init ──────────────────────────────────────────────────────
+document.getElementById('sidebarToggle').addEventListener('click', function() {
+  var sb = document.querySelector('.sidebar');
+  sb.style.display = (sb.style.display === 'none') ? 'flex' : 'none';
+});
+
+document.getElementById('newChatBtn').addEventListener('click', function() {
+  currentConvId = null;
+  document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('chatTitle').textContent = 'JDS Business AI';
+  document.getElementById('deleteConvBtn').classList.add('hidden');
+  document.getElementById('categoryBadge').classList.add('hidden');
+  addWelcomeMessage();
+  loadConversations();
+});
+
+document.querySelectorAll('.quick-topic').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var inp = document.getElementById('messageInput');
+    inp.value = btn.getAttribute('data-msg');
+    onInput(inp);
+    inp.focus();
+    sendMessage();
+  });
+});
+
+document.addEventListener('DOMContentLoaded', async function() {
+  updateUsage({{ remaining_messages|default:10 }});
+  addWelcomeMessage();
+  await ensureJwt();
+  loadConversations();
+});
+</script>
+{% endblock %}

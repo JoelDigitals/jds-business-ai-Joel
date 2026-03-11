@@ -1,0 +1,56 @@
+{% extends "base/base.html" %}
+{% block title %}Datenschutzerklärung - JDS Business AI{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-16">
+    <h1 class="text-4xl font-bold text-white mb-4">Datenschutzerklärung</h1>
+    <p class="text-slate-400 mb-12">Gemäß DSGVO (EU) 2016/679 — Stand: 2024</p>
+
+    <div class="space-y-10 text-slate-300">
+
+        <section id="impressum" class="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+            <h2 class="text-2xl font-semibold text-white mb-4">Impressum</h2>
+            <p>{{ gdpr.DATA_CONTROLLER }}</p>
+            <p>Datenschutz-E-Mail: <a href="mailto:{{ gdpr.DATA_CONTROLLER_EMAIL }}" class="text-indigo-400">{{ gdpr.DATA_CONTROLLER_EMAIL }}</a></p>
+            <p>Datenschutzbeauftragter: <a href="mailto:{{ gdpr.DPA_CONTACT }}" class="text-indigo-400">{{ gdpr.DPA_CONTACT }}</a></p>
+        </section>
+
+        <section class="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+            <h2 class="text-2xl font-semibold text-white mb-4">1. Datenverarbeitung</h2>
+            <p class="mb-4">Wir verarbeiten deine Daten ausschließlich auf Basis von <strong class="text-white">{{ gdpr.LEGAL_BASIS }}</strong>.</p>
+            <p>Folgende Daten werden gespeichert:</p>
+            <ul class="mt-3 space-y-1 list-disc list-inside text-slate-400">
+                <li>E-Mail-Adresse (für Account)</li>
+                <li>Konversationsverläufe (für Chat-Funktion)</li>
+                <li>Nutzungsstatistiken (für Plan-Limits)</li>
+                <li>GDPR-Logs (für Compliance)</li>
+            </ul>
+            <p class="mt-4 text-green-400">✅ Die KI-Antworten werden <strong>vollständig lokal</strong> generiert. Deine Nachrichten werden nicht an Drittanbieter (OpenAI etc.) übertragen.</p>
+        </section>
+
+        <section class="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+            <h2 class="text-2xl font-semibold text-white mb-4">2. Datenspeicherung und Löschung</h2>
+            <p>Daten werden nach {{ gdpr.DATA_RETENTION_DAYS }} Tagen automatisch gelöscht oder anonymisiert.</p>
+            <p class="mt-3">Du hast jederzeit das Recht auf:</p>
+            <ul class="mt-3 space-y-2 list-disc list-inside text-slate-400">
+                <li><strong class="text-white">Auskunft</strong> (Art. 15 DSGVO): <a href="/api/auth/gdpr/export/" class="text-indigo-400">Daten exportieren</a></li>
+                <li><strong class="text-white">Berichtigung</strong> (Art. 16 DSGVO): Profil bearbeiten</li>
+                <li><strong class="text-white">Löschung</strong> (Art. 17 DSGVO): Account löschen</li>
+                <li><strong class="text-white">Datenübertragbarkeit</strong> (Art. 20 DSGVO): JSON-Export verfügbar</li>
+                <li><strong class="text-white">Widerspruch</strong> (Art. 21 DSGVO): Jederzeit möglich</li>
+            </ul>
+        </section>
+
+        <section class="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+            <h2 class="text-2xl font-semibold text-white mb-4">3. Cookies</h2>
+            <p>Wir verwenden ausschließlich technisch notwendige Cookies (Session-Management). Es werden keine Tracking- oder Analytics-Cookies gesetzt.</p>
+        </section>
+
+        <section class="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+            <h2 class="text-2xl font-semibold text-white mb-4">4. Kontakt Datenschutz</h2>
+            <p>Bei Fragen zum Datenschutz wende dich an: <a href="mailto:{{ gdpr.DATA_CONTROLLER_EMAIL }}" class="text-indigo-400">{{ gdpr.DATA_CONTROLLER_EMAIL }}</a></p>
+            <p class="mt-3">Du hast auch das Recht, eine Beschwerde bei der zuständigen Datenschutzbehörde einzureichen.</p>
+        </section>
+
+    </div>
+</div>
+{% endblock %}
