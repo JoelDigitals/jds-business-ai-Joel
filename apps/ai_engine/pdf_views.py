@@ -28,7 +28,6 @@ class MessagePDFView(APIView):
         from .models import Message
         from .pdf_service import generate_pdf
         from rest_framework.response import Response
-        from rest_framework import status
 
         try:
             msg = Message.objects.get(
@@ -51,7 +50,9 @@ class MessagePDFView(APIView):
                 company_name=company,
                 user_name=user_name,
             )
-            safe_title = ''.join(c for c in title if c.isalnum() or c in ' _-')[:40].replace(' ', '_')
+            safe_title = ''.join(
+                c for c in title if c.isalnum() or c in ' _-'
+            )[:40].replace(' ', '_')
             resp = HttpResponse(pdf_bytes, content_type='application/pdf')
             resp['Content-Disposition'] = f'attachment; filename="JDS_{safe_title}.pdf"'
             return resp
@@ -64,8 +65,12 @@ class MessagePDFView(APIView):
 class ChatStreamView(APIView):
     """
     POST /chat/stream/
-    Server-Sent Events: Schreibt Antwort Wort für Wort (ChatGPT-Effekt).
-    Body: { message: str, conversation_id?: str }
+    SSE Events:
+      {"type":"start",    "conversation_id":"...", "category":"..."}
+      {"type":"thinking", "steps":[...]}   <- Denkvorgang SEPARAT, nie im Text
+      {"type":"chunk",    "text":"..."}    <- Reiner AI-Text-Chunk
+      {"type":"done",     "message_id":"...", ...}
+      {"type":"error",    "message":"..."}
     """
     authentication_classes = _DEFAULT_AUTH
     permission_classes = [IsAuthenticated]
@@ -89,7 +94,6 @@ class ChatStreamView(APIView):
                 yield f'data: {json.dumps({"type":"error","message":reason,"limit":True})}\n\n'
             return StreamingHttpResponse(limit_stream(), content_type='text/event-stream')
 
-        # Alles vorbereiten BEVOR der Generator startet
         from .views import _get_or_create_conversation
         from .reasoning_engine import get_reasoning_engine
 
@@ -116,68 +120,90 @@ class ChatStreamView(APIView):
         def event_stream():
             full_text = ''
             start = time.time()
+            used_groq = False
+            model_label = 'rule-based'
 
-            # 1. Start-Event
+            # EVENT 1: Start
             yield f'data: {json.dumps({"type":"start","category":reasoning.category,"conversation_id":str(conversation.id),"is_new":is_new})}\n\n'
 
-            groq_key = getattr(dj_conf.settings, 'GROQ_API_KEY', '') or ''
-            used_groq = False
+            # EVENT 2: Denkvorgang SEPARAT senden (NIE in den Nachrichtentext mischen)
+            thinking_steps = []
+            for step in reasoning.reasoning_steps:
+                action = step.get('action', '')
+                result_val = step.get('result', '')
+                inp = step.get('input', '')
+                thinking_steps.append({
+                    'action': action,
+                    'result': result_val or (inp[:120] if inp else ''),
+                })
+            thinking_steps.append({
+                'action': 'Kategorie erkannt',
+                'result': f"{reasoning.category} ({int(reasoning.confidence * 100)}% Konfidenz)",
+            })
+            yield f'data: {json.dumps({"type":"thinking","steps":thinking_steps})}\n\n'
 
-            # 2. PRIORITÄT: Spezial-Handler (Dokument-Generator, Businessplan, etc.)
-            # Läuft IMMER zuerst — vor Groq und vor Rule-Based
+            groq_key = getattr(dj_conf.settings, 'GROQ_API_KEY', '') or ''
+
+            # PRIORITÄT 1: Spezial-Handler
             try:
                 from .views import _route_to_specialist
                 specialist_text = _route_to_specialist(reasoning.category, raw_message)
                 if specialist_text and len(specialist_text.strip()) > 50:
                     full_text = specialist_text
-                    # Wort-für-Wort streamen für natürlicheren Effekt
-                    words = full_text.split(' ')
-                    for i, word in enumerate(words):
-                        chunk = word + (' ' if i < len(words) - 1 else '')
+                    model_label = f'specialist:{reasoning.category}'
+                    for i, word in enumerate(full_text.split(' ')):
+                        chunk = word + (' ' if i < len(full_text.split(' ')) - 1 else '')
                         yield f'data: {json.dumps({"type":"chunk","text":chunk})}\n\n'
-                        if word.endswith(('.', '!', '?', '\n', '##', '---')):
-                            time.sleep(0.015)
-                        else:
-                            time.sleep(0.005)
+                        time.sleep(0.02 if word.endswith(('.', '!', '?')) else 0.006)
             except Exception as e:
                 logger.error(f"Spezial-Handler Fehler: {e}", exc_info=True)
                 full_text = ''
 
-            # 3. Groq — wenn Spezial-Handler nichts geliefert hat
+            # PRIORITÄT 2: Groq LLM Streaming
             if not full_text and groq_key and groq_key.strip():
                 try:
                     from .llm_service import _groq_stream
                     prompt = reasoning.enhanced_prompt or raw_message
                     for chunk in _groq_stream(prompt, context_messages, groq_key.strip(), user_info):
-                        full_text += chunk
-                        yield f'data: {json.dumps({"type":"chunk","text":chunk})}\n\n'
-                    used_groq = True
+                        if chunk:
+                            full_text += chunk
+                            yield f'data: {json.dumps({"type":"chunk","text":chunk})}\n\n'
+                    if full_text.strip():
+                        used_groq = True
+                        model_label = 'groq/llama-3.3-70b-versatile'
+                        logger.info(f"Groq OK: {len(full_text)} Zeichen")
+                    else:
+                        logger.warning("Groq: Kein Text erhalten")
+                        full_text = ''
                 except Exception as e:
-                    logger.error(f"Groq Stream Fehler: {e}")
+                    logger.error(f"Groq Fehler: {e}")
                     full_text = ''
 
-            # 4. Fallback: Rule-Based mit simuliertem Tipp-Effekt
+            # PRIORITÄT 3: Wissensdatenbank-Fallback
             if not full_text or not full_text.strip():
-                from .business_logic import get_rule_based_response
-                full_text = get_rule_based_response(raw_message)
+                model_label = 'knowledge-fallback'
+                try:
+                    from .views import _knowledge_fallback
+                    full_text = _knowledge_fallback(reasoning.category, raw_message)
+                except Exception:
+                    from .business_logic import get_rule_based_response
+                    full_text = get_rule_based_response(raw_message)
 
-                # Wort-für-Wort Simulation (natürlichere Geschwindigkeit)
                 words = full_text.split(' ')
                 streamed = ''
                 for i, word in enumerate(words):
                     chunk = word + (' ' if i < len(words) - 1 else '')
                     streamed += chunk
                     yield f'data: {json.dumps({"type":"chunk","text":chunk})}\n\n'
-                    # Natürliche Pausen: nach Satzzeichen länger
-                    if word.endswith(('.', '!', '?', '\n')):
+                    if word.endswith(('.', '!', '?')):
                         time.sleep(0.04)
-                    elif word.endswith(','):
+                    elif word.endswith((',', ';', ':')):
                         time.sleep(0.02)
                     else:
-                        time.sleep(0.012)
+                        time.sleep(0.010)
                 full_text = streamed
 
-            # 4. Disclaimer anhängen
+            # Disclaimer (nur Text, kein Denkvorgang)
             try:
                 from .reasoning_engine import get_reasoning_engine as gre
                 full_text = gre().add_disclaimers(full_text, reasoning)
@@ -186,7 +212,7 @@ class ChatStreamView(APIView):
 
             processing_time = int((time.time() - start) * 1000)
 
-            # 5. Speichern
+            # Speichern
             try:
                 with transaction.atomic():
                     from .models import Message, Conversation
@@ -199,10 +225,11 @@ class ChatStreamView(APIView):
                         conversation=conversation,
                         role='assistant',
                         content=full_text,
+                        reasoning_steps=reasoning.reasoning_steps,
                         business_category=reasoning.category,
                         confidence_score=round(reasoning.confidence, 3),
                         processing_time_ms=processing_time,
-                        sources_used=['groq/llama-3.1-8b-instant' if used_groq else 'rule-based'],
+                        sources_used=[model_label],
                     )
                     Conversation.objects.filter(pk=conversation.pk).update(
                         message_count=conversation.message_count + 2
@@ -211,7 +238,21 @@ class ChatStreamView(APIView):
 
                 from .pdf_service import is_pdf_worthy
                 offer_pdf = is_pdf_worthy(full_text)
-                yield f'data: {json.dumps({"type":"done","message_id":str(ai_msg.id),"processing_time_ms":processing_time,"category":reasoning.category,"confidence":round(reasoning.confidence,3),"remaining_messages":sub.get_remaining_messages(),"offer_pdf":offer_pdf,"pdf_url":f"/chat/message/{str(ai_msg.id)}/pdf/" if offer_pdf else None,"model":"groq" if used_groq else "rule-based"})}\n\n'
+
+                done_payload = {
+                    "type": "done",
+                    "message_id": str(ai_msg.id),
+                    "processing_time_ms": processing_time,
+                    "category": reasoning.category,
+                    "confidence": round(reasoning.confidence, 3),
+                    "remaining_messages": sub.get_remaining_messages(),
+                    "offer_pdf": offer_pdf,
+                    "pdf_url": f"/chat/message/{str(ai_msg.id)}/pdf/" if offer_pdf else None,
+                    "model_used": model_label,
+                    "is_fallback": not used_groq,
+                }
+                yield f'data: {json.dumps(done_payload)}\n\n'
+
             except Exception as e:
                 logger.error(f"Stream Speicher-Fehler: {e}", exc_info=True)
                 yield f'data: {json.dumps({"type":"error","message":str(e)})}\n\n'

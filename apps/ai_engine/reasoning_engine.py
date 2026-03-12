@@ -42,9 +42,12 @@ class ReasoningEngine:
     # Kategorie-Keywords (für schnelle Erkennung)
     CATEGORIES = {
         'founding': {
-            'keywords': ['gründen', 'gründung', 'gmbh', 'ug', 'ag', 'einzelunternehmen',
-                        'gewerbeanmeldung', 'handelsregister', 'startup', 'unternehmen gründen',
-                        'selbstständig', 'freiberufler', 'gewerbe anmelden'],
+            'keywords': ['gründen', 'gründung', 'gründe', 'gegründet', 'gmbh', 'ug', 'ag',
+                        'einzelunternehmen', 'gewerbeanmeldung', 'handelsregister', 'startup',
+                        'unternehmen gründen', 'selbstständig', 'selbststaendig', 'freiberufler',
+                        'gewerbe anmelden', 'gewerbe', 'kleinunternehmen', 'kleinunternehmer',
+                        'nebenerwerb', 'nebenberuf', 'nebentätigkeit', 'rechtsform', 'gbr', 'ohg',
+                        'einzelkaufmann', 'selbständig'],
             'weight': 1.0,
         },
         'business_plan': {

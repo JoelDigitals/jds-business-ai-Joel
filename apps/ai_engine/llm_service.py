@@ -200,13 +200,20 @@ def _groq_response(prompt, context_messages, api_key, start_time, user_info=None
         return {
             'text': text,
             'processing_time_ms': int((time.time() - start_time) * 1000),
-            'model_used': 'groq/llama-3.1-8b-instant',
+            'model_used': 'groq/llama-3.3-70b-versatile',
             'error': None,
             'fallback': False,
         }
     except Exception as e:
         logger.error(f"Groq API Fehler: {e}")
-        return _rule_fallback(prompt, start_time)
+        # Leeres Ergebnis zurückgeben — der Aufrufer entscheidet über Fallback
+        return {
+            'text': '',
+            'processing_time_ms': int((time.time() - start_time) * 1000),
+            'model_used': 'groq/error',
+            'error': str(e),
+            'fallback': True,
+        }
 
 
 def _groq_stream(prompt, context_messages, api_key, user_info=None):

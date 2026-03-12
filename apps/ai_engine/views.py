@@ -108,60 +108,93 @@ def _get_or_create_conversation(user, conversation_id, first_message: str):
 
 def _route_to_specialist(category: str, user_message: str):
     """
-    Leitet bestimmte Kategorien an Spezial-Handler weiter.
-    Schneller als LLM — nutzt die eingebaute Wissensdatenbank.
-    Returns: str (Antworttext) | None (→ LLM nutzen)
+    Nur echte Dokument-Generierung (Impressum, AGB etc.) und Businessplan
+    werden hier abgefangen — alles andere geht direkt an Groq.
+
+    Returns: str (fertiges Dokument) | None (→ Groq LLM übernimmt)
     """
+    import re as _re
     msg = user_message.lower()
 
-    # Direkte Keyword-Erkennung — unabhängig von Reasoning-Kategorie.
-    # Fängt Tippfehler ("bussiness") und unerkannte Kombinationen ab.
+    # ── 1. Businessplan: Daten extrahieren, dann Groq generieren lassen ──────
     BUSINESSPLAN_KEYWORDS = [
         'businessplan', 'business plan', 'bussiness plan', 'bussinesplan',
-        'geschäftsplan', 'unternehmensplan', 'plan erstellen', 'plan schreiben',
-        'pitch deck', 'executive summary',
+        'geschäftsplan', 'unternehmensplan', 'pitch deck',
     ]
     if category == 'business_plan' or any(k in msg for k in BUSINESSPLAN_KEYWORDS):
-        from .business_logic import _generate_personalized_businessplan
-        import re
-        # NUR erste Zeile für Namen nutzen — verhindert Newline-Bug
-        first_line = user_message.split('\n')[0].strip()
-        name_match = re.search(
-            r'(?:fuer|für|for|von|meiner\s+firma|firma|unternehmen|startup|company)[ \t]+'
-            r'([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß0-9 \t\-\.&]{1,40}?)'
-            r'(?:[ \t]+(?:fuer|für|im|in|ab|vom|bis|gmbh|ug|ag)|[,\.?!]|$)',
-            first_line, re.IGNORECASE
-        )
-        if not name_match:
-            name_match = re.search(
-                r'(?:businessplan|business plan|bussiness plan)[ \t]+(?:für[ \t]+|fuer[ \t]+)?'
-                r'([A-ZÄÖÜ][A-Za-zÄÖÜäöüß0-9 \-\.&]{1,40}?)(?:[,\.?!]|$)',
-                first_line, re.IGNORECASE
+        from .document_generator import extract_structured_data
+        from .llm_service import generate_response as llm_generate
+
+        struct = extract_structured_data(user_message)
+        company_name = struct.get('company', '').strip()
+        if not company_name:
+            cm = _re.search(
+                r'(?:für|fuer|for|von|firma|unternehmen|startup|company)[ \t]+'
+                r'([A-ZÄÖÜ][A-Za-zÄÖÜäöüß0-9 \-\.&]{1,40}?)'
+                r'(?:[,\.?!\n]|[ \t]+(?:mit|und|in|ab|gmbh|ug|ag)|$)',
+                user_message.split('\n')[0], _re.IGNORECASE
             )
-        company_name = name_match.group(1).strip() if name_match else ''
-        company_name = re.sub(r'^(meine\s+firma\s*|mein\s+unternehmen\s*|mein\s+startup\s*)', '', company_name, flags=re.IGNORECASE).strip()
-        company_name = re.sub(r'\s*(wurde\s+am|gegründet|seit|\d{2}\.\d{2}|\b202\d\b).*$', '', company_name, flags=re.IGNORECASE).strip()
+            company_name = cm.group(1).strip() if cm else ''
+
+        prompt = f"""Erstelle einen vollständigen, professionellen Businessplan auf Deutsch.
+
+{f"Unternehmensname: {company_name}" if company_name else "Kein Unternehmensname angegeben — verwende [Unternehmensname] als Platzhalter."}
+Nutzeranfrage: {user_message}
+
+Struktur (alle Kapitel ausführlich ausarbeiten):
+1. Executive Summary
+2. Unternehmen & Gründer
+3. Produkt / Dienstleistung & USP
+4. Markt & Zielgruppe (mit realistischen Zahlen)
+5. Wettbewerbsanalyse
+6. SWOT-Analyse
+7. Marketing & Vertrieb
+8. Finanzplanung (3-Jahres-Prognose mit konkreten Zahlen)
+9. Risikoanalyse
+10. 90-Tage-Aktionsplan
+
+Regeln:
+- Schreibe konkret und professionell — keine leeren Phrasen
+- Nutze Markdown: ## Überschriften, Tabellen, Listen
+- Passe alle Inhalte an die tatsächliche Branche/das Unternehmen an
+- Keine generischen Platzhalter für Dinge die sich ableiten lassen"""
+
+        result = llm_generate(prompt=prompt)
+        text = result.get('text', '').strip()
+        if text and len(text) > 200:
+            return text
+        # Fallback nur wenn Groq komplett versagt
+        from .business_logic import _generate_personalized_businessplan
         return _generate_personalized_businessplan(company_name, user_message)
 
-    # ── Dokument-Generierung erkennen (Intent-Check vor Category-Routing) ──
-    import re as _re
-    GENERATE_VERBS = [
+    # ── 2. Dokument-Generierung: Daten extrahieren + Groq generieren lassen ──
+    DOC_TYPES = {
+        'impressum':      ['impressum'],
+        'datenschutz':    ['datenschutz', 'datenschutzerklärung', 'privacy policy'],
+        'agb':            ['agb', 'allgemeine geschäftsbedingungen', 'nutzungsbedingungen'],
+        'nda':            ['nda', 'geheimhaltungsvertrag', 'vertraulichkeitsvereinbarung'],
+        'arbeitsvertrag': ['arbeitsvertrag erstellen', 'arbeitsvertrag schreiben',
+                           'arbeitsvertrag generieren', 'arbeitsvertrag vorlage',
+                           'anstellungsvertrag'],
+        'rechnung':       ['rechnungsvorlage', 'rechnungstemplate', 'musterrechnung'],
+        'mahnschreiben':  ['mahnschreiben', 'mahnung schreiben', 'mahnung erstellen'],
+    }
+
+    # Nur wenn Nutzer aktiv ein Dokument erstellen will (Verb prüfen)
+    CREATE_VERBS = [
         'schreib', 'erstell', 'generier', 'mach mir', 'formulier',
         'entwirf', 'verfass', 'gib mir', 'brauch', 'noch einmal',
-        'nochmal', 'nochmal ein', 'neue', 'aktualis', 'mit folgenden',
+        'nochmal', 'mit folgenden', 'für mich',
     ]
-    DOC_TYPES = {
-        'impressum': ['impressum'],
-        'datenschutz': ['datenschutz', 'datenschutzerklärung', 'privacy policy'],
-        'agb': ['agb', 'allgemeine geschäftsbedingungen', 'nutzungsbedingungen'],
-        'nda': ['nda', 'geheimhaltungsvertrag', 'vertraulichkeitsvereinbarung'],
-        'arbeitsvertrag': ['arbeitsvertrag', 'anstellungsvertrag'],
-        'rechnung': ['rechnungsvorlage', 'rechnungstemplate', 'musterrechnung'],
-        'mahnschreiben': ['mahnung', 'mahnschreiben'],
-    }
+    wants_document = any(v in msg for v in CREATE_VERBS)
+
     detected_doc = None
     for doc_key, doc_keywords in DOC_TYPES.items():
         if any(k in msg for k in doc_keywords):
+            # "Wie erstelle ich einen Arbeitsvertrag?" → kein Dokument erstellen,
+            # nur wenn explizit gewünscht ODER kurze direkte Anfrage
+            if doc_key == 'arbeitsvertrag' and not wants_document:
+                return None  # → Groq beantwortet die Frage
             detected_doc = doc_key
             break
 
@@ -169,32 +202,29 @@ def _route_to_specialist(category: str, user_message: str):
         from .document_generator import extract_structured_data
         from .llm_service import generate_response as llm_generate
 
-        # Strukturierte Daten extrahieren
         struct = extract_structured_data(user_message)
         company_name = struct.get('company', '').strip()
         if not company_name:
             cm = _re.search(
                 r'(?:für|fuer|for|von|meiner\s+firma|firma|unternehmen|startup)'
                 r'[ \t]+([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß0-9 \-\.&]+?)'
-                r'(?:\s+(?:mit|und|für|in|ab|vom|an|als|ist|hat|wurde|seit|gmbh|ug|ag)|[,\.?!\n]|$)',
+                r'(?:\s+(?:mit|und|für|in|ab|vom|an|gmbh|ug|ag)|[,\.?!\n]|$)',
                 user_message.split('\n')[0], _re.IGNORECASE
             )
             company_name = cm.group(1).strip() if cm else ''
 
-        # Bekannte Daten als strukturierten Kontext für das LLM aufbereiten
         known = []
-        if company_name:                       known.append(f"Firma: {company_name}")
-        fn = struct.get('first_name','')
-        ln = struct.get('last_name','')
-        if fn or ln:                           known.append(f"Inhaber: {fn} {ln}".strip())
-        if struct.get('address'):              known.append(f"Adresse: {struct['address']}")
-        if struct.get('email'):                known.append(f"E-Mail: {struct['email']}")
-        if struct.get('phone'):                known.append(f"Telefon: {struct['phone']}")
-        if struct.get('url'):                  known.append(f"Website: {struct['url']}")
-        if struct.get('vat_id'):               known.append(f"USt-IdNr.: {struct['vat_id']}")
-        if struct.get('no_vat'):               known.append("Umsatzsteuer: Keine (Kleinunternehmerregelung § 19 UStG)")
-        if struct.get('rechtsform'):           known.append(f"Rechtsform: {struct['rechtsform']}")
-
+        if company_name:              known.append(f"Firma: {company_name}")
+        fn = struct.get('first_name', '')
+        ln = struct.get('last_name', '')
+        if fn or ln:                  known.append(f"Inhaber: {fn} {ln}".strip())
+        if struct.get('address'):     known.append(f"Adresse: {struct['address']}")
+        if struct.get('email'):       known.append(f"E-Mail: {struct['email']}")
+        if struct.get('phone'):       known.append(f"Telefon: {struct['phone']}")
+        if struct.get('url'):         known.append(f"Website: {struct['url']}")
+        if struct.get('vat_id'):      known.append(f"USt-IdNr.: {struct['vat_id']}")
+        if struct.get('no_vat'):      known.append("Umsatzsteuer: Keine (Kleinunternehmerregelung § 19 UStG)")
+        if struct.get('rechtsform'):  known.append(f"Rechtsform: {struct['rechtsform']}")
         known_block = "\n".join(known) if known else "(keine Daten angegeben – Platzhalter verwenden)"
 
         doc_labels = {
@@ -210,45 +240,33 @@ def _route_to_specialist(category: str, user_message: str):
 
         llm_prompt = f"""Erstelle ein vollständiges, professionelles Dokument: **{doc_label}**
 
-Folgende Daten wurden vom Nutzer angegeben — verwende sie EXAKT so, ohne Platzhalter für bekannte Felder:
+Bekannte Daten (EXAKT so verwenden, keine Platzhalter für diese Felder):
 {known_block}
 
 Regeln:
-- Felder die bekannt sind: direkt eintragen, KEIN Platzhalter
-- Felder die fehlen: als [Platzhalter] kennzeichnen und am Ende in einer kurzen Checkliste auflisten
-- Format: sauberes Markdown mit ## Überschriften
-- Sprache: Deutsch
-- Keine unnötigen Erklärungen davor — starte direkt mit dem Dokument
-- Am Ende: einzeiliger ⚖️ Hinweis dass dies eine Vorlage ist"""
+- Bekannte Felder direkt eintragen, NIE als Platzhalter belassen
+- Fehlende Felder: als [Platzhalter] kennzeichnen
+- Format: sauberes Markdown, ## Überschriften
+- Starte direkt mit dem Dokument, keine Vorbemerkungen
+- Am Ende: kurze Checkliste nur für fehlende Felder (falls vorhanden)
+- Einzeiliger ⚖️ Hinweis am Schluss"""
 
         result = llm_generate(prompt=llm_prompt)
-        llm_text = result.get('text', '').strip()
+        text = result.get('text', '').strip()
+        if text and len(text) > 100:
+            return text
+        from .document_generator import generate_document
+        return generate_document(detected_doc, company_name, user_message, struct)
 
-        # Fallback auf Template-Generator wenn LLM versagt
-        if not llm_text or len(llm_text) < 100:
-            from .document_generator import generate_document
-            return generate_document(detected_doc, company_name, user_message, struct)
-
-        return llm_text
-
-    if category == 'legal':
-        result = get_legal_assistant().analyze_legal_question(user_message)
-        if result.get('response') and len(result['response']) > 50:
-            return result['response']
-
-    if category in ('founding', 'finance', 'tax', 'strategy', 'marketing'):
-        response = get_rule_based_response(user_message)
-        if response and 'Starte deinen ersten' not in response and len(response) > 100:
-            return response
-
+    # ── 3. Alles andere → None = Groq übernimmt ──────────────────────────────
     return None
 
 
 def _generate_ai_response(user_message: str, enhanced_prompt: str,
                            context_messages: list, category: str, user_info: dict = None) -> dict:
     """
-    Generiert KI-Antwort über LLM, mit Rule-Based Fallback.
-    Returns: {'text': str, 'model': str, 'fallback': bool, 'processing_time_ms': int}
+    Generiert KI-Antwort über Groq LLM.
+    Bei Groq-Ausfall: kategorie-basierter Wissens-Fallback statt generischer Begrüßung.
     """
     ai_result = generate_response(
         prompt=enhanced_prompt or user_message,
@@ -259,26 +277,198 @@ def _generate_ai_response(user_message: str, enhanced_prompt: str,
     text = ai_result.get('text', '').strip()
     is_fallback = ai_result.get('fallback', False)
 
-    # Qualitätsprüfung: War LLM-Antwort brauchbar?
-    is_good = (
-        text
-        and len(text) >= 30
-        and not text.lower().startswith('ich kann')
-        and not text.lower().startswith('als ki')
-        and text.strip() != user_message.strip()
-    )
-
-    if not is_good:
-        logger.info(f"LLM unbrauchbar (len={len(text)}), Rule-Based Fallback aktiviert")
-        text = get_rule_based_response(user_message)
+    # Nur bei wirklich leerer/kaputten Antwort zurückfallen
+    if not text or len(text) < 20 or text.strip() == user_message.strip():
+        logger.warning(f"Groq nicht verfügbar (model={ai_result.get('model_used')}), "
+                       f"Wissens-Fallback für Kategorie '{category}'")
+        text = _knowledge_fallback(user_message, category)
         is_fallback = True
 
     return {
         'text': text,
-        'model': ai_result.get('model_used', 'rule-based'),
+        'model': ai_result.get('model_used', 'knowledge-fallback'),
         'fallback': is_fallback,
         'processing_time_ms': ai_result.get('processing_time_ms', 0),
     }
+
+
+def _knowledge_fallback(user_message: str, category: str) -> str:
+    """
+    Intelligenter Fallback wenn Groq nicht erreichbar.
+    Gibt kategorie-spezifische Antworten statt generischer Begrüßung.
+    """
+    msg = user_message.lower()
+
+    # ── Gründung / Kleinunternehmen / Nebenerwerb ────────────────────────────
+    if category == 'founding' or any(w in msg for w in [
+        'gründ', 'kleinunternehm', 'selbstständig', 'gewerbe', 'freiberufl',
+        'einzelunternehm', 'nebenerwerb', 'nebenberuf', 'nebentätigkeit',
+        'nebenerwerb', 'selbststaendig',
+    ]):
+        nebenberuf = any(w in msg for w in ['nebenerwerb', 'nebenberuf', 'nebentätigkeit', 'neben'])
+        neben_block = """
+**Besonderheiten im Nebenerwerb:**
+- Arbeitgeber informieren (Arbeitsvertrag prüfen — Konkurrenzverbot?)
+- Bei Jahresumsatz unter 22.000 € → Kleinunternehmerregelung möglich
+- Einnahmen als „Einkünfte aus Gewerbebetrieb" in Steuererklärung angeben
+- Krankenversicherung: Nebengewerbe meist beitragsfrei solange Hauptberuf versichert
+""" if nebenberuf else ""
+
+        return f"""## Kleinunternehmen gründen{' (Nebenerwerb)' if nebenberuf else ''}
+
+### Einzelunternehmen — die einfachste Rechtsform
+
+| Kriterium | Details |
+|---|---|
+| **Mindestkapital** | 0 € |
+| **Gründungskosten** | 20–65 € (Gewerbeanmeldung) |
+| **Haftung** | Unbegrenzt (auch Privatvermögen) |
+| **Buchhaltung** | Einfache EÜR bis 60.000 € Gewinn |
+| **Zeitaufwand** | 1–2 Tage |
+
+### Gründungsschritte
+
+1. **Gewerbeanmeldung** beim Gewerbeamt — oder Finanzamt (wenn Freiberufler: Arzt, Anwalt, Journalist etc.)
+2. **Fragebogen zur steuerlichen Erfassung** beim Finanzamt ausfüllen
+3. **Geschäftskonto** eröffnen (Kontist, N26 Business, Commerzbank)
+4. **Buchhaltungssoftware** einrichten (Lexoffice, sevDesk, WISO)
+5. **Krankenversicherung** klären
+{neben_block}
+### Kleinunternehmerregelung (§ 19 UStG)
+- Bis **22.000 € Umsatz/Jahr** → keine Umsatzsteuer ausweisen
+- ✅ Weniger Bürokratie, einfachere Buchhaltung
+- ❌ Kein Vorsteuerabzug möglich
+
+💡 Möchtest du einen **Businessplan** oder ein **Impressum** dafür? Einfach fragen!
+
+⚖️ Für individuelle Beratung: IHK-Gründungsberatung (kostenlos) oder Steuerberater."""
+
+    # ── Rechtsformen-Vergleich ───────────────────────────────────────────────
+    if any(w in msg for w in ['gmbh', 'ug ', 'rechtsform', 'ug oder', 'oder ug', 'ag ', 'gbr']):
+        return """## Rechtsformen im Vergleich
+
+| Rechtsform | Kapital | Haftung | Gründungskosten | Für wen? |
+|---|---|---|---|---|
+| **Einzelunternehmen** | 0 € | Unbegrenzt | 20–65 € | Freelancer, Nebenerwerb |
+| **GbR** | 0 € | Unbegrenzt | 0–500 € | 2+ Gründer, kleine Teams |
+| **UG (haftungsbeschränkt)** | ab 1 € | Begrenzt ✅ | 300–800 € | Wenig Kapital, Haftungsschutz |
+| **GmbH** | 25.000 € | Begrenzt ✅ | 1.500–3.000 € | Etablierte Unternehmen |
+| **AG** | 50.000 € | Begrenzt ✅ | 5.000+ € | Börse, viele Investoren |
+
+**Empfehlung:**
+- Solo-Start, wenig Risiko → **Einzelunternehmen**
+- Haftungsschutz, wenig Kapital → **UG** (später zur GmbH aufstocken)
+- Mehrere Gründer, Investoren → **GmbH**
+
+💡 Soll ich dir die Gründungsschritte für eine bestimmte Rechtsform detailliert erklären?
+
+⚖️ Finale Entscheidung: IHK-Beratung (kostenlos) oder Steuerberater."""
+
+    # ── Finanzen & Förderung ─────────────────────────────────────────────────
+    if category in ('finance', 'tax') or any(w in msg for w in [
+        'steuer', 'förderung', 'kfw', 'finanzierung', 'kredit', 'cashflow',
+        'buchhaltung', 'umsatzsteuer', 'einkommensteuer',
+    ]):
+        return """## Finanzen & Förderung für Gründer
+
+### Top Förderprogramme
+
+| Programm | Betrag | Für wen? |
+|---|---|---|
+| **KfW StartGeld** | bis 125.000 € | Alle Gründer, über Hausbank |
+| **EXIST-Stipendium** | bis 3.000 €/Monat | Studierende & Absolventen |
+| **Gründungszuschuss** | ~1.500 €/Monat | ALG-I-Empfänger |
+| **BAFA-Beratungsförderung** | bis 4.000 € | Beratungskosten 50–80 % |
+| **Mikromezzaninkapital** | bis 50.000 € | Kleine Unternehmen |
+
+### Steuern im Überblick
+- **Einkommensteuer:** 14–45 % (Einzelunternehmen)
+- **Körperschaftsteuer:** 15 % (GmbH/UG)
+- **Gewerbesteuer:** 7–18 % je nach Gemeinde
+- **Umsatzsteuer:** 19 % / 7 % ermäßigt
+- **Kleinunternehmer (§ 19 UStG):** Bis 22.000 €/Jahr → keine MwSt.
+
+💡 **Tipp:** KfW-Anträge immer über die Hausbank stellen — nicht direkt bei der KfW!
+
+⚖️ Steuerberater für individuelle Planung empfohlen."""
+
+    # ── Marketing & Strategie ────────────────────────────────────────────────
+    if category in ('marketing', 'strategy') or any(w in msg for w in [
+        'marketing', 'kunde', 'zielgruppe', 'seo', 'social media', 'strategie', 'swot', 'werbung',
+    ]):
+        return """## Marketing & Strategie für Gründer
+
+### 1. Zielgruppe zuerst definieren
+- **B2B:** Branche, Unternehmensgröße, Entscheider, Hauptproblem
+- **B2C:** Alter, Einkommen, Interessen, Kaufmotive
+
+### 2. Die effektivsten Kanäle für Startups
+
+| Kanal | Kosten | Eignung |
+|---|---|---|
+| **Empfehlungen / Netzwerk** | 0 € | Stärkster Kanal überhaupt |
+| **Google My Business** | Kostenlos | Lokal, B2C |
+| **LinkedIn** | Ab 0 € | B2B, Dienstleister |
+| **Instagram/TikTok** | Ab 0 € | B2C, Produkte |
+| **SEO/Blog** | Zeit | Langfristig, alle |
+| **Google Ads** | Ab 300 €/Mo | Schnelle Leads |
+
+### 3. Budget-Empfehlung
+- **Monat 1–3:** 500–1.000 €/Monat für Aufbau
+- **Ab Monat 4:** 10–15 % des Umsatzes reinvestieren
+
+💡 **Tipp:** Starte mit 1–2 Kanälen und mache sie wirklich gut, bevor du weitere hinzufügst."""
+
+    # ── HR & Arbeitsrecht ────────────────────────────────────────────────────
+    if category == 'hr' or any(w in msg for w in [
+        'mitarbeiter', 'arbeitsvertrag', 'gehalt', 'lohn', 'kündigung',
+        'einstellen', 'anstellen', 'mindestlohn', 'probezeit', 'minijob',
+    ]):
+        return """## Mitarbeiter einstellen — Schritt für Schritt
+
+### Pflichtinhalte eines Arbeitsvertrags
+
+| Inhalt | Details |
+|---|---|
+| Beginn & Tätigkeit | Startdatum, Berufsbezeichnung, Aufgaben |
+| Arbeitsort | Büro, Remote, hybrid |
+| Vergütung | Bruttogehalt, Boni, Sonderzahlungen |
+| Arbeitszeit | Max. 48 h/Woche |
+| Urlaub | Mind. 20 Tage/Jahr (5-Tage-Woche) |
+| Probezeit | Max. 6 Monate |
+| Kündigungsfrist | Probezeit: 2 Wochen; danach gestaffelt (§ 622 BGB) |
+
+### Aktuelle Zahlen (2025)
+- **Mindestlohn:** 12,82 €/Stunde
+- **Minijob-Grenze:** 556 €/Monat
+- **Arbeitgeberanteil Sozialabgaben:** ~20 % zusätzlich zum Brutto
+
+### Einstellungsprozess
+1. Stelle ausschreiben (LinkedIn, Indeed, StepStone)
+2. Bewerbungsgespräch führen
+3. Arbeitsvertrag aufsetzen & unterschreiben lassen
+4. Beim Krankenversicherer des AN anmelden
+5. Lohnsteuer monatlich ans Finanzamt
+
+💡 Soll ich dir einen **fertigen Arbeitsvertrag** erstellen? Sag mir Jobtitel, Gehalt und Startdatum!
+
+⚖️ Für individuelle Verträge Rechtsanwalt empfohlen."""
+
+    # ── Generic catch-all ────────────────────────────────────────────────────
+    return """Hallo! Ich bin **JDS Business AI** — dein KI-Assistent für Gründung, Recht, Finanzen und Strategie.
+
+Womit kann ich dir helfen?
+
+| Thema | Beispiel |
+|---|---|
+| 🏢 Gründung & Rechtsform | *"Wie gründe ich eine GmbH?"* |
+| 📋 Rechtsdokumente | *"Schreibe ein Impressum für meine Firma"* |
+| 📊 Businessplan | *"Erstelle einen Businessplan für mein Startup"* |
+| 💰 Förderung & Finanzen | *"Welche KfW-Förderungen gibt es?"* |
+| 👥 HR & Verträge | *"Erstelle einen Arbeitsvertrag"* |
+| 📣 Marketing | *"Wie gewinne ich erste Kunden?"* |
+
+Stell mir deine Frage konkret — am besten mit deinem Firmennamen und deiner Situation!"""
 
 
 def _handle_image_upload(request, subscription):
@@ -494,10 +684,33 @@ class ChatView(APIView):
             model_used = 'rule-based:safety-net'
             is_fallback = True
 
-        # ── SCHRITT 7: Rechtliche Disclaimer anfügen ───────────
+        # ── SCHRITT 7: Disclaimer anhängen (NUR Text, KEIN Denkvorgang) ──
+        # Der Denkvorgang wird NICHT in den Nachrichtentext gemischt.
+        # Er wird sauber als eigenes JSON-Feld "thinking" übergeben.
+        # Das Frontend zeigt ihn separat an (wie ChatGPT).
         ai_response_text = get_reasoning_engine().add_disclaimers(
             ai_response_text, reasoning
         )
+
+        # ── Denkvorgang als strukturiertes JSON aufbauen ───────
+        thinking_steps_for_frontend = []
+        for step in reasoning.reasoning_steps:
+            action = step.get('action', '')
+            result_val = step.get('result', '')
+            inp = step.get('input', '')
+            thinking_steps_for_frontend.append({
+                'action': action,
+                'result': result_val or inp[:120] if (result_val or inp) else '',
+            })
+        # Modell-Info als letzten Schritt anhängen
+        thinking_steps_for_frontend.append({
+            'action': 'Modell',
+            'result': model_used,
+        })
+        thinking_steps_for_frontend.append({
+            'action': 'Modus',
+            'result': 'Groq LLM' if not is_fallback else 'Wissensdatenbank',
+        })
 
         processing_time = int((time.time() - start_time) * 1000)
 
@@ -513,7 +726,7 @@ class ChatView(APIView):
             ai_msg = Message.objects.create(
                 conversation=conversation,
                 role='assistant',
-                content=ai_response_text,
+                content=ai_response_text,          # Nur sauberer Text, kein <details>
                 reasoning_steps=reasoning.reasoning_steps,
                 business_category=reasoning.category,
                 confidence_score=round(reasoning.confidence, 3),
@@ -540,7 +753,8 @@ class ChatView(APIView):
         return Response({
             'conversation_id': str(conversation.id),
             'message_id': str(ai_msg.id),
-            'response': ai_response_text,
+            'response': ai_response_text,          # Sauberer Nachrichtentext
+            'thinking': thinking_steps_for_frontend,  # Denkvorgang separat
             'category': reasoning.category,
             'confidence': round(reasoning.confidence, 3),
             'reasoning_steps': reasoning.reasoning_steps,

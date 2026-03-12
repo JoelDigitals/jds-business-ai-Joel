@@ -43,6 +43,10 @@
 .md-content a { color:#818cf8; text-decoration:underline; text-underline-offset:2px; }
 .md-content hr { border:none; border-top:1px solid rgba(99,102,241,.2); margin:.75rem 0; }
 .md-content ul, .md-content ol { margin:.3rem 0; }
+.md-content table { width:100%; border-collapse:collapse; font-size:.8rem; margin:.5rem 0; }
+.md-content table th { background:rgba(79,70,229,.25); color:#a5b4fc; padding:.4rem .75rem; text-align:left; font-weight:600; border-bottom:1px solid rgba(99,102,241,.3); }
+.md-content table td { padding:.35rem .75rem; border-bottom:1px solid rgba(30,41,59,.8); color:#cbd5e1; }
+.md-content table tr:nth-child(even) td { background:rgba(30,41,59,.4); }
 
 /* ── Usage Bar ─────────────────────────────────────────────────── */
 .usage-bar-fill { transition: width .6s cubic-bezier(.4,0,.2,1); }
@@ -111,27 +115,167 @@
 #toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999; display:none; }
 #toast.show { display:flex; animation:msgIn .25s ease-out; }
 
-/* ── Table styling (in md-content) ─────────────────────────────── */
-.md-content table { width:100%; border-collapse:collapse; font-size:.8rem; margin:.5rem 0; }
-.md-content table th { background:rgba(79,70,229,.25); color:#a5b4fc; padding:.4rem .75rem; text-align:left; font-weight:600; border-bottom:1px solid rgba(99,102,241,.3); }
-.md-content table td { padding:.35rem .75rem; border-bottom:1px solid rgba(30,41,59,.8); color:#cbd5e1; }
-.md-content table tr:nth-child(even) td { background:rgba(30,41,59,.4); }
+/* ══════════════════════════════════════════════
+   THINKING / WORKING INDICATOR (Live + Final)
+══════════════════════════════════════════════ */
 
-/* ── Thinking / Writing Indicator ───────────────────────────────── */
-@keyframes think-spin {
-  0%   { transform: rotate(0deg);   opacity: 1; }
-  50%  { transform: rotate(180deg); opacity: 0.5; }
-  100% { transform: rotate(360deg); opacity: 1; }
+/* Live-Indikator während Anfrage läuft */
+@keyframes think-orbit {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
-.think-spin { animation: think-spin 1.2s linear infinite; }
+@keyframes think-pulse-ring {
+  0%, 100% { opacity: .4; transform: scale(1); }
+  50%       { opacity: 1;  transform: scale(1.15); }
+}
+@keyframes step-slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: none; }
+}
 
-@keyframes think-pulse {
-  0%, 100% { opacity: 0.6; }
-  50%       { opacity: 1; }
+/* Die Zeile die den Live-Thinking-Status anzeigt */
+.thinking-live-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
-.thinking-bar { animation: think-pulse 1.5s ease-in-out infinite; }
-.thinking-bar.writing { animation: none; opacity: 1; border-color: rgba(99,102,241,.3); }
-.thinking-bar.writing .think-spin { animation: think-spin 0.6s linear infinite; }
+.thinking-live-avatar {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #fff;
+  flex-shrink: 0;
+}
+.thinking-live-box {
+  background: linear-gradient(135deg, rgba(30,41,59,.9), rgba(15,23,42,.9));
+  border: 1px solid rgba(99,102,241,.25);
+  border-radius: 1rem 1rem 1rem .25rem;
+  padding: 10px 14px;
+  min-width: 200px;
+}
+.thinking-live-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.think-orbit-ring {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(129,140,248,.25);
+  border-top-color: #818cf8;
+  border-radius: 50%;
+  animation: think-orbit .8s linear infinite;
+  flex-shrink: 0;
+}
+.thinking-live-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a5b4fc;
+  letter-spacing: .03em;
+}
+.thinking-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.thinking-step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(148,163,184,.6);
+  opacity: 0;
+}
+.thinking-step-item.visible {
+  animation: step-slide-in .25s ease both;
+  opacity: 1;
+}
+.thinking-step-item.active {
+  color: #e0e7ff;
+}
+.thinking-step-item.done {
+  color: rgba(99,102,241,.7);
+}
+.thinking-step-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(129,140,248,.4);
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.thinking-step-item.active .thinking-step-dot { background: #818cf8; animation: think-pulse-ring 1s ease-in-out infinite; }
+.thinking-step-item.done  .thinking-step-dot { background: #6366f1; }
+
+/* Finaler Denkvorgang-Block in der fertigen Antwort */
+.thinking-details {
+  margin-bottom: 8px;
+  border: 1px solid rgba(99,102,241,.2);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 11px;
+}
+.thinking-details summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  background: rgba(15,23,42,.8);
+  color: rgba(148,163,184,.8);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-weight: 500;
+  transition: background .15s;
+}
+.thinking-details summary::-webkit-details-marker { display: none; }
+.thinking-details summary:hover { background: rgba(30,41,59,.9); color: #a5b4fc; }
+.thinking-details[open] summary { color: #a5b4fc; border-bottom: 1px solid rgba(99,102,241,.15); }
+.thinking-details[open] .think-chevron { transform: rotate(90deg); }
+.think-chevron { transition: transform .2s; flex-shrink: 0; }
+
+.thinking-detail-body {
+  padding: 8px 12px;
+  background: rgba(8,15,26,.6);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.think-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: rgba(148,163,184,.75);
+  line-height: 1.5;
+}
+.think-detail-dot {
+  width: 4px; height: 4px;
+  background: #6366f1;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.think-detail-label { font-weight: 600; color: #a5b4fc; }
+.thinking-model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.thinking-model-tag.groq {
+  background: rgba(99,102,241,.15);
+  border: 1px solid rgba(99,102,241,.3);
+  color: #a5b4fc;
+}
+.thinking-model-tag.fallback {
+  background: rgba(234,179,8,.1);
+  border: 1px solid rgba(234,179,8,.25);
+  color: #fbbf24;
+}
 </style>
 {% endblock %}
 
@@ -375,17 +519,159 @@ async function apiJson(url, payload, signal) {
   return apiCall(url, 'POST', JSON.stringify(payload), signal, {'Content-Type':'application/json'});
 }
 
-// ── Markdown Renderer ─────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// LIVE THINKING INDICATOR
+// ══════════════════════════════════════════════════════════════
+var THINK_STEPS = [
+  { icon: '🔍', label: 'Frage analysieren' },
+  { icon: '🧠', label: 'Kategorie erkennen' },
+  { icon: '📚', label: 'Wissensbasis abrufen' },
+  { icon: '✍️', label: 'Antwort formulieren' },
+];
+var _thinkTimers = [];
+var _thinkBubbleId = null;
+
+function showThinkingLive() {
+  _thinkTimers.forEach(clearTimeout);
+  _thinkTimers = [];
+
+  var id = 'think_live_' + Date.now();
+  _thinkBubbleId = id;
+
+  var stepsHtml = THINK_STEPS.map(function(s, i) {
+    return '<div class="thinking-step-item" id="thstep_' + id + '_' + i + '">' +
+      '<div class="thinking-step-dot"></div>' +
+      '<span style="font-size:10px;margin-right:3px">' + s.icon + '</span>' +
+      '<span>' + s.label + '</span>' +
+    '</div>';
+  }).join('');
+
+  var html = '<div id="' + id + '" class="flex justify-start msg-in">' +
+    '<div class="thinking-live-row">' +
+    '<div class="thinking-live-avatar">J</div>' +
+    '<div class="thinking-live-box">' +
+    '<div class="thinking-live-header">' +
+    '<div class="think-orbit-ring"></div>' +
+    '<span class="thinking-live-label" id="thlabel_' + id + '">Denke nach…</span>' +
+    '</div>' +
+    '<div class="thinking-step-list">' + stepsHtml + '</div>' +
+    '</div>' +
+    '</div></div>';
+
+  document.getElementById('chatMessages').insertAdjacentHTML('beforeend', html);
+  scrollToBottom();
+
+  // Schritte nacheinander einblenden
+  THINK_STEPS.forEach(function(s, i) {
+    var t = setTimeout(function() {
+      // Vorherigen Schritt als done markieren
+      if (i > 0) {
+        var prev = document.getElementById('thstep_' + id + '_' + (i-1));
+        if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+      }
+      var el = document.getElementById('thstep_' + id + '_' + i);
+      if (el) { el.classList.add('visible', 'active'); }
+      var lbl = document.getElementById('thlabel_' + id);
+      if (lbl) lbl.textContent = s.label + '…';
+      scrollToBottom();
+    }, i * 550);
+    _thinkTimers.push(t);
+  });
+
+  return id;
+}
+
+function removeThinkingLive() {
+  _thinkTimers.forEach(clearTimeout);
+  _thinkTimers = [];
+  if (_thinkBubbleId) {
+    var el = document.getElementById(_thinkBubbleId);
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-4px)';
+      el.style.transition = 'opacity .2s, transform .2s';
+      setTimeout(function() { if (el.parentNode) el.remove(); }, 200);
+    }
+    _thinkBubbleId = null;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PARSE & RENDER THINKING BLOCK (aus der fertigen Antwort)
+// ══════════════════════════════════════════════════════════════
+function parseThinkingBlock(text) {
+  // Passt zu: <details>\n<summary>...</summary>\n\n- **Label:** Value\n...\n\n</details>
+  var re = /<details>\s*<summary>[^<]*<\/summary>([\s\S]*?)<\/details>/i;
+  var m = text.match(re);
+  if (!m) return { thinkingRaw: null, cleanText: text };
+  return {
+    thinkingRaw: m[1].trim(),
+    cleanText: text.replace(re, '').trim()
+  };
+}
+
+function buildThinkingDetailsHtml(raw) {
+  if (!raw) return '';
+  var lines = raw.split('\n').filter(function(l) { return /^\s*-\s*\*\*/.test(l); });
+  if (!lines.length) return '';
+
+  var modelVal = '', modeVal = '', stepRows = '';
+  lines.forEach(function(line) {
+    var m = line.match(/\*\*(.+?):\*\*\s*(.*)/);
+    if (!m) return;
+    var label = m[1].trim(), val = m[2].trim();
+    if (label === 'Modell') { modelVal = val; return; }
+    if (label === 'Modus')  { modeVal  = val; return; }
+    stepRows += '<div class="think-detail-row">' +
+      '<div class="think-detail-dot"></div>' +
+      '<span><span class="think-detail-label">' + esc(label) + ':</span> ' + esc(val) + '</span>' +
+    '</div>';
+  });
+
+  var isGroq = modelVal && !modelVal.includes('error') && !modelVal.includes('fallback') && !modelVal.includes('knowledge');
+  var tagClass = isGroq ? 'groq' : 'fallback';
+  var tagLabel = isGroq ? ('✓ ' + modelVal) : ('⚡ ' + (modeVal || 'Wissensdatenbank'));
+
+  var modelRow = modelVal
+    ? '<div class="think-detail-row" style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(99,102,241,.12)">' +
+      '<div class="think-detail-dot"></div>' +
+      '<span><span class="think-detail-label">Modell:</span> <span class="thinking-model-tag ' + tagClass + '">' + esc(tagLabel) + '</span>' +
+      (modeVal ? ' &nbsp;<span style="color:rgba(148,163,184,.5);font-size:10px">' + esc(modeVal) + '</span>' : '') +
+      '</span></div>'
+    : '';
+
+  return '<details class="thinking-details">' +
+    '<summary>' +
+    '<svg class="think-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>' +
+    '🧠&nbsp; Denkvorgang' +
+    '<span style="margin-left:auto"><span class="thinking-model-tag ' + tagClass + '" style="font-size:9px">' + esc(tagLabel) + '</span></span>' +
+    '</summary>' +
+    '<div class="thinking-detail-body">' + stepRows + modelRow + '</div>' +
+    '</details>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// MARKDOWN-HILFSFUNKTIONEN (global — überall nutzbar)
+// ══════════════════════════════════════════════════════════════
+function mdEscape(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function mdInline(s) {
+  return mdEscape(s)
+    .replace(/\*\*(.+?)\*\*/g,'<strong class="text-white font-semibold">$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em class="text-indigo-300">$1</em>')
+    .replace(/`([^`]+)`/g,'<code class="bg-slate-900 text-cyan-300 px-1 rounded text-xs font-mono">$1</code>')
+    .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" class="text-indigo-400 underline" target="_blank">$1</a>');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MARKDOWN RENDERER — Text ist immer sauber (kein <details> drin)
+// ══════════════════════════════════════════════════════════════
 function renderMarkdown(text) {
   if (!text) return '';
-  function xe(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function ri(s) {
-    return xe(s)
-      .replace(/\*\*(.+?)\*\*/g,'<strong class="text-white font-semibold">$1</strong>')
-      .replace(/\*(.+?)\*/g,'<em class="text-indigo-300">$1</em>')
-      .replace(/`([^`]+)`/g,'<code class="bg-slate-900 text-cyan-300 px-1 rounded text-xs font-mono">$1</code>')
-      .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" class="text-indigo-400 underline" target="_blank">$1</a>');
-  }
+
+  // Sicherheit: falls doch noch alte <details>-Blöcke in gespeicherten Nachrichten sind
+  text = text.replace(/<details>[\s\S]*?<\/details>\n?/gi, '').trim();
 
   var lines = text.split('\n');
   var out = '';
@@ -398,15 +684,24 @@ function renderMarkdown(text) {
     buf = [];
   }
 
-  // Pre-pass: render tables
+  // Pre-pass: render tables (nutzt globale mdEscape + mdInline)
   var tableRe = /^(\|.+\|\s*\n)+/gm;
   text = text.replace(tableRe, function(block) {
     var rows = block.trim().split('\n').filter(function(l) { return !/^\|[\s\-:|]+\|/.test(l); });
     if (rows.length < 2) return block;
     function pr(l) { return l.replace(/^\||\|$/g,'').split('|').map(function(c){ return c.trim(); }); }
     var hcells = pr(rows[0]);
-    var th = '<thead class="bg-indigo-900/60"><tr>' + hcells.map(function(h){ return '<th class="px-3 py-2 text-left text-xs font-semibold text-indigo-200">' + xe(h) + '</th>'; }).join('') + '</tr></thead>';
-    var tb = '<tbody>' + rows.slice(1).map(function(r,i){ var cs=pr(r); return '<tr class="'+(i%2?'bg-slate-800/40':'')+'">'+cs.map(function(c){ return '<td class="px-3 py-1.5 text-xs border-b border-slate-700/30">'+ri(c)+'</td>'; }).join('')+'</tr>'; }).join('') + '</tbody>';
+    var th = '<thead class="bg-indigo-900/60"><tr>' +
+      hcells.map(function(h){ return '<th class="px-3 py-2 text-left text-xs font-semibold text-indigo-200">' + mdEscape(h) + '</th>'; }).join('') +
+    '</tr></thead>';
+    var tb = '<tbody>' +
+      rows.slice(1).map(function(r, rowIdx){
+        var cs = pr(r);
+        return '<tr class="'+(rowIdx%2?'bg-slate-800/40':'')+'">' +
+          cs.map(function(c){ return '<td class="px-3 py-1.5 text-xs border-b border-slate-700/30">' + mdInline(c) + '</td>'; }).join('') +
+        '</tr>';
+      }).join('') +
+    '</tbody>';
     return '<TABLE_BLOCK>' + JSON.stringify({h:th,b:tb}) + '</TABLE_BLOCK>\n';
   });
 
@@ -424,58 +719,67 @@ function renderMarkdown(text) {
       continue;
     }
 
-    // Code block
     if (line.startsWith('```')) {
       flush();
       var lang = line.slice(3).trim();
       var code = [];
       i++;
       while (i < lines.length && !lines[i].startsWith('```')) { code.push(lines[i]); i++; }
-      out += '<pre class="bg-slate-900 rounded-lg p-3 my-2 overflow-x-auto border border-slate-700/30"><code class="text-cyan-300 text-xs font-mono">' + xe(code.join('\n')) + '</code></pre>';
+      out += '<pre class="bg-slate-900 rounded-lg p-3 my-2 overflow-x-auto border border-slate-700/30"><code class="text-cyan-300 text-xs font-mono">' + mdEscape(code.join('\n')) + '</code></pre>';
       continue;
     }
 
-    // Headings
     var hm = line.match(/^(#{1,4})\s+(.+)$/);
     if (hm) {
       flush();
       var lv = hm[1].length;
       var cls = ['','text-xl font-bold text-white mt-5 mb-2','text-base font-bold text-indigo-300 mt-4 mb-2 pb-1 border-b border-slate-700/50','text-sm font-bold text-white mt-3 mb-1','text-sm font-semibold text-slate-300 mt-2'][lv];
-      out += '<h'+lv+' class="'+cls+'">'+ri(hm[2])+'</h'+lv+'>';
+      out += '<h'+lv+' class="'+cls+'">'+mdInline(hm[2])+'</h'+lv+'>';
       continue;
     }
 
-    // HR
     if (/^---+$/.test(line.trim())) { flush(); out += '<hr class="border-slate-700/50 my-3">'; continue; }
 
-    // Checkbox
     var cbm = line.match(/^- \[([ x])\] (.+)$/);
     if (cbm) {
       var done = cbm[1]==='x';
-      buf.push('<li class="flex gap-2 items-start"><span class="flex-shrink-0 '+(done?'text-emerald-400':'text-slate-500')+'">'+(done?'☑':'☐')+'</span><span class="'+(done?'line-through text-slate-500':'')+'">'+ri(cbm[2])+'</span></li>');
+      buf.push('<li class="flex gap-2 items-start"><span class="flex-shrink-0 '+(done?'text-emerald-400':'text-slate-500')+'">'+(done?'☑':'☐')+'</span><span class="'+(done?'line-through text-slate-500':'')+'">'+mdInline(cbm[2])+'</span></li>');
       continue;
     }
 
-    // Numbered list
     var nm = line.match(/^(\d+)\.\s+(.+)$/);
-    if (nm) { buf.push('<li class="flex gap-2 items-start"><span class="text-indigo-400 font-bold text-xs flex-shrink-0">'+nm[1]+'.</span><span>'+ri(nm[2])+'</span></li>'); continue; }
+    if (nm) { buf.push('<li class="flex gap-2 items-start"><span class="text-indigo-400 font-bold text-xs flex-shrink-0">'+nm[1]+'.</span><span>'+mdInline(nm[2])+'</span></li>'); continue; }
 
-    // Bullet
     var bm = line.match(/^[-*]\s+(.+)$/);
-    if (bm) { buf.push('<li class="flex gap-2 items-start"><span class="text-indigo-400 flex-shrink-0 mt-0.5">•</span><span>'+ri(bm[1])+'</span></li>'); continue; }
+    if (bm) { buf.push('<li class="flex gap-2 items-start"><span class="text-indigo-400 flex-shrink-0 mt-0.5">•</span><span>'+mdInline(bm[1])+'</span></li>'); continue; }
 
-    // Empty line
     if (!line.trim()) { flush(); out += '<div class="h-2"></div>'; continue; }
 
-    // Paragraph
     flush();
-    out += '<p class="text-slate-200 text-sm leading-relaxed my-1">'+ri(line)+'</p>';
+    out += '<p class="text-slate-200 text-sm leading-relaxed my-1">'+mdInline(line)+'</p>';
   }
   flush();
-  return '<div class="md-content">'+out+'</div>';
+  return '<div class="md-content">' + out + '</div>';
 }
 
-// ── Bubble-Hilfsfunktionen ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// BUBBLE HELPERS
+// ══════════════════════════════════════════════════════════════
+
+// Parst altes <details>-Format aus gespeicherten Nachrichten
+function extractLegacyThinking(text) {
+  var re = /<details>\s*<summary>[^<]*<\/summary>([\s\S]*?)<\/details>\s*/i;
+  var m = text.match(re);
+  if (!m) return { steps: null, clean: text };
+  // Parse die Bullet-Zeilen
+  var steps = [];
+  m[1].split('\n').forEach(function(line) {
+    var lm = line.match(/\*\*(.+?):\*\*\s*(.*)/);
+    if (lm) steps.push({ action: lm[1].trim(), result: lm[2].trim() });
+  });
+  return { steps: steps.length ? steps : null, clean: text.replace(re, '').trim() };
+}
+
 function addMessage(role, content, meta) {
   var isUser = role === 'user';
   var id = 'msg_' + Date.now();
@@ -484,6 +788,16 @@ function addMessage(role, content, meta) {
     inner = '<div class="chat-bubble-user px-4 py-3 rounded-2xl rounded-tr-sm text-white text-sm leading-relaxed max-w-[80%]">' +
       '<p>' + String(content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p></div>';
   } else {
+    // Alten <details>-Block aus gespeicherten Nachrichten herausschneiden
+    var parsed = extractLegacyThinking(content);
+    var cleanContent = parsed.clean;
+    var legacySteps  = parsed.steps;
+
+    // Denkvorgang-HTML bauen (aus altem Format oder meta.thinking)
+    var thinkHtml = '';
+    var steps = (meta && meta.thinking) || legacySteps;
+    if (steps && steps.length) thinkHtml = buildThinkingHtmlFromSteps(steps);
+
     var metaHtml = '';
     if (meta) {
       metaHtml = '<div class="flex items-center gap-2 mt-2 flex-wrap">';
@@ -494,8 +808,11 @@ function addMessage(role, content, meta) {
     }
     inner = '<div class="flex gap-2.5 max-w-[90%] xl:max-w-[78%]">' +
       '<div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">J</div>' +
-      '<div><div class="chat-bubble-ai px-4 py-3 rounded-2xl rounded-tl-sm text-slate-200 text-sm leading-relaxed">' +
-      renderMarkdown(content) + '</div>' + metaHtml + '</div></div>';
+      '<div>' +
+        thinkHtml +
+        '<div class="chat-bubble-ai px-4 py-3 rounded-2xl rounded-tl-sm text-slate-200 text-sm leading-relaxed">' +
+        renderMarkdown(cleanContent) + '</div>' + metaHtml +
+      '</div></div>';
   }
   var wrap = '<div id="'+id+'" class="flex '+(isUser?'justify-end':'justify-start')+' msg-in">'+inner+'</div>';
   document.getElementById('chatMessages').insertAdjacentHTML('beforeend', wrap);
@@ -503,17 +820,45 @@ function addMessage(role, content, meta) {
   return id;
 }
 
-function showTyping() {
-  var id = 'typing_' + Date.now();
-  document.getElementById('chatMessages').insertAdjacentHTML('beforeend',
-    '<div id="'+id+'" class="flex justify-start msg-in"><div class="flex gap-2.5">' +
-    '<div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">J</div>' +
-    '<div class="chat-bubble-ai px-4 py-3.5 rounded-2xl rounded-tl-sm"><div class="flex gap-1"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></div></div>' +
-    '</div></div>');
-  scrollToBottom();
-  return id;
+// Baut Thinking-HTML aus einem steps-Array (wiederverwendbar)
+function buildThinkingHtmlFromSteps(steps) {
+  var modelStep = steps.find(function(s) { return s.action === 'Modell'; });
+  var modeStep  = steps.find(function(s) { return s.action === 'Modus'; });
+  var isGroq = modelStep && modelStep.result &&
+    !modelStep.result.includes('fallback') &&
+    !modelStep.result.includes('knowledge') &&
+    !modelStep.result.includes('rule') &&
+    !modelStep.result.includes('error');
+  var tagClass = isGroq ? 'groq' : 'fallback';
+  var tagLabel = isGroq
+    ? ('✓ ' + modelStep.result)
+    : ('⚡ ' + (modeStep ? modeStep.result : 'Wissensdatenbank'));
+
+  var stepRows = '';
+  steps.forEach(function(s) {
+    if (s.action === 'Modell' || s.action === 'Modus') return;
+    stepRows += '<div class="think-detail-row">' +
+      '<div class="think-detail-dot"></div>' +
+      '<span><span class="think-detail-label">' + esc(s.action) + ':</span> ' + esc(s.result) + '</span>' +
+    '</div>';
+  });
+
+  var modelRow = modelStep
+    ? '<div class="think-detail-row" style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(99,102,241,.12)">' +
+      '<div class="think-detail-dot"></div>' +
+      '<span><span class="think-detail-label">Modell:</span> ' +
+      '<span class="thinking-model-tag ' + tagClass + '">' + esc(tagLabel) + '</span></span>' +
+    '</div>' : '';
+
+  return '<details class="thinking-details">' +
+    '<summary>' +
+    '<svg class="think-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>' +
+    '🧠&nbsp; Denkvorgang' +
+    '<span style="margin-left:auto"><span class="thinking-model-tag ' + tagClass + '" style="font-size:9px">' + esc(tagLabel) + '</span></span>' +
+    '</summary>' +
+    '<div class="thinking-detail-body">' + stepRows + modelRow + '</div>' +
+  '</details>';
 }
-function removeTyping(id) { var el=document.getElementById(id); if(el) el.remove(); }
 
 function createStreamBubble() {
   var id = 'stream_' + Date.now();
@@ -521,48 +866,49 @@ function createStreamBubble() {
     '<div id="'+id+'" class="flex justify-start msg-in">' +
     '<div class="flex gap-2.5 max-w-[90%] xl:max-w-[78%]">' +
     '<div class="w-7 h-7 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">J</div>' +
-    '<div class="flex flex-col gap-1.5">' +
-    '<div class="thinking-bar flex items-center gap-2 px-3 py-1.5 bg-slate-900/60 border border-indigo-900/40 rounded-xl text-xs text-indigo-400/80">' +
-    '<svg class="w-3 h-3 think-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>' +
-    '<span class="think-text">Denke nach…</span>' +
-    '</div>' +
-    '<div class="chat-bubble-ai px-4 py-3 rounded-2xl rounded-tl-sm text-slate-200 text-sm leading-relaxed hidden">' +
-    '<span class="stream-raw whitespace-pre-wrap"></span><span class="animate-pulse text-indigo-400">&#9611;</span>' +
-    '</div>' +
+    '<div class="chat-bubble-ai px-4 py-3 rounded-2xl rounded-tl-sm text-slate-200 text-sm leading-relaxed">' +
+    '<span class="stream-raw whitespace-pre-wrap"></span><span class="stream-cursor text-indigo-400">▋</span>' +
     '</div></div></div>');
   scrollToBottom();
   return id;
 }
+
 function updateStreamBubble(id, text) {
   var el = document.getElementById(id);
   if (!el) return;
-  // Beim ersten Chunk: Thinking-Bar ausblenden, Bubble einblenden
-  var thinkBar = el.querySelector('.thinking-bar');
-  var bubble = el.querySelector('.chat-bubble-ai');
-  if (thinkBar && !thinkBar.classList.contains('hidden')) {
-    // Thinking-Text animieren: "Denkt..." → "Schreibt..."
-    var thinkText = thinkBar.querySelector('.think-text');
-    if (thinkText) thinkText.textContent = 'Schreibt…';
-    thinkBar.classList.add('writing');
-  }
-  if (bubble && bubble.classList.contains('hidden')) {
-    bubble.classList.remove('hidden');
-  }
   var raw = el.querySelector('.stream-raw');
   if (raw) raw.textContent = text;
   scrollToBottom();
 }
-function finalizeStreamBubble(id, text, meta) {
+
+function finalizeStreamBubble(id, text, meta, thinkingSteps) {
   var el = document.getElementById(id);
   if (!el) return;
-  // Thinking-Bar entfernen
-  var thinkBar = el.querySelector('.thinking-bar');
-  if (thinkBar) thinkBar.remove();
+
+  // Denkvorgang-Block VOR der Bubble einfügen (wie ChatGPT)
+  if (thinkingSteps && thinkingSteps.length) {
+    var thinkEl = el.querySelector('.thinking-details');
+    if (thinkEl) {
+      // Schon vorhanden — Modell-Badge aktualisieren
+      var modelStep = thinkingSteps.find(function(s) { return s.action === 'Modell'; });
+      var modeStep  = thinkingSteps.find(function(s) { return s.action === 'Modus'; });
+      if (modelStep) {
+        var isGroq = modelStep.result && !modelStep.result.includes('fallback') && !modelStep.result.includes('knowledge') && !modelStep.result.includes('rule');
+        var tagClass = isGroq ? 'groq' : 'fallback';
+        var tagTxt   = isGroq ? ('✓ ' + modelStep.result) : ('⚡ ' + (modeStep ? modeStep.result : 'Wissensdatenbank'));
+        thinkEl.querySelectorAll('.thinking-model-tag').forEach(function(t) {
+          t.className = 'thinking-model-tag ' + tagClass;
+          t.textContent = tagTxt;
+        });
+      }
+    }
+  }
+
   var bubble = el.querySelector('.chat-bubble-ai');
   if (!bubble) return;
-  bubble.classList.remove('hidden');
+  // Text ist SAUBER (kein <details>) — direkt rendern
   bubble.innerHTML = renderMarkdown(text);
-  // Meta UNTER der Bubble
+
   if (meta) {
     var m = '<div class="flex items-center gap-2 mt-1.5 flex-wrap">';
     var hasAny = false;
@@ -573,9 +919,6 @@ function finalizeStreamBubble(id, text, meta) {
     if (meta.processingTime) {
       m += '<span class="text-[10px] text-slate-600">'+meta.processingTime+' ms</span>';
       hasAny = true;
-    }
-    if (meta.model && meta.model !== 'rule-based') {
-      m += '<span class="text-[10px] text-slate-700">• '+esc(meta.model)+'</span>';
     }
     if (meta.offerPdf && meta.pdfUrl) {
       m += '<a href="'+esc(meta.pdfUrl)+'" target="_blank" class="inline-flex items-center gap-1 text-xs bg-indigo-600/90 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg font-medium transition-colors shadow-sm">' +
@@ -589,11 +932,28 @@ function finalizeStreamBubble(id, text, meta) {
   scrollToBottom();
 }
 
-// ── Streaming ─────────────────────────────────────────────────
+// ── Denkvorgang-Block in eine bestehende Bubble einbauen ──────
+function injectThinkingBlock(bubbleId, steps) {
+  var el = document.getElementById(bubbleId);
+  if (!el) return;
+  var html = buildThinkingHtmlFromSteps(steps);
+  var wrapper = el.querySelector('.flex.gap-2\\.5') || el.querySelector('[class*="flex gap"]');
+  if (wrapper) {
+    var innerDiv = wrapper.querySelector('div:last-child') || wrapper;
+    innerDiv.insertAdjacentHTML('afterbegin', html);
+  }
+  scrollToBottom();
+}
+
+// ══════════════════════════════════════════════════════════════
+// STREAMING — Denkvorgang kommt als eigenes SSE-Event
+// ══════════════════════════════════════════════════════════════
 async function sendWithStream(message) {
   var jwt = getJwt();
   var headers = {'Content-Type':'application/json','X-CSRFToken':getCsrf()};
   if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+
+  showThinkingLive();
 
   var res;
   try {
@@ -602,16 +962,25 @@ async function sendWithStream(message) {
       body: JSON.stringify({message: message, conversation_id: currentConvId || null}),
       credentials: 'same-origin'
     });
-  } catch(e) { await sendWithFallback(message); return; }
+  } catch(e) {
+    removeThinkingLive();
+    await sendWithFallback(message);
+    return;
+  }
 
-  if (!res.ok || !res.body) { await sendWithFallback(message); return; }
+  if (!res.ok || !res.body) {
+    removeThinkingLive();
+    await sendWithFallback(message);
+    return;
+  }
 
-  var bubbleId = createStreamBubble();
-  var reader = res.body.getReader();
-  var dec = new TextDecoder();
-  var buf = '';
-  var full = '';
-  var meta = {};
+  var bubbleId   = null;
+  var reader     = res.body.getReader();
+  var dec        = new TextDecoder();
+  var buf        = '';
+  var full       = '';
+  var meta       = {};
+  var thinkSteps = null;
 
   try {
     while (true) {
@@ -627,52 +996,116 @@ async function sendWithStream(message) {
         if (!ds) continue;
         try {
           var ev = JSON.parse(ds);
-          if (ev.type === 'start' && ev.conversation_id) currentConvId = ev.conversation_id;
-          else if (ev.type === 'chunk' && ev.text) { full += ev.text; updateStreamBubble(bubbleId, full); }
-          else if (ev.type === 'done') { meta = {category:ev.category, processingTime:ev.processing_time_ms, offerPdf:ev.offer_pdf, pdfUrl:ev.pdf_url}; updateUsage(ev.remaining_messages); loadConversations(); }
-          else if (ev.type === 'error') throw new Error(ev.message || 'Fehler');
+
+          if (ev.type === 'start') {
+            if (ev.conversation_id) currentConvId = ev.conversation_id;
+
+          } else if (ev.type === 'thinking') {
+            // ── Denkvorgang-Event: Live-Indikator ersetzen durch Thinking-Block ──
+            thinkSteps = ev.steps || [];
+            removeThinkingLive();
+            // Stream-Bubble anlegen und Thinking-Block direkt einbauen
+            if (!bubbleId) bubbleId = createStreamBubble();
+            injectThinkingBlock(bubbleId, thinkSteps);
+
+          } else if (ev.type === 'chunk' && ev.text) {
+            // Erster Text-Chunk
+            if (!bubbleId) {
+              removeThinkingLive();
+              bubbleId = createStreamBubble();
+            }
+            full += ev.text;
+            updateStreamBubble(bubbleId, full);
+
+          } else if (ev.type === 'done') {
+            meta = {
+              category: ev.category,
+              processingTime: ev.processing_time_ms,
+              offerPdf: ev.offer_pdf,
+              pdfUrl: ev.pdf_url,
+              model: ev.model_used,
+            };
+            updateUsage(ev.remaining_messages);
+            loadConversations();
+
+          } else if (ev.type === 'error') {
+            throw new Error(ev.message || 'Fehler');
+          }
         } catch(pe) {}
       }
     }
   } catch(e) { console.warn('Stream:', e); }
 
-  if (!full.trim()) { document.getElementById(bubbleId)?.remove(); await sendWithFallback(message); return; }
-  finalizeStreamBubble(bubbleId, full, meta);
+  removeThinkingLive();
+
+  if (!full.trim()) {
+    if (bubbleId) { var stale = document.getElementById(bubbleId); if(stale) stale.remove(); }
+    await sendWithFallback(message);
+    return;
+  }
+  if (bubbleId) finalizeStreamBubble(bubbleId, full, meta, thinkSteps);
 }
 
 async function sendWithFallback(message) {
-  // Normaler API-Call, dann Wort-für-Wort tippen
-  var res = await apiJson('/chat/message/', {message: message, conversation_id: currentConvId || null}, null);
+  showThinkingLive();
+
+  var res;
+  try {
+    res = await apiJson('/chat/message/', {message: message, conversation_id: currentConvId || null}, null);
+  } catch(e) {
+    removeThinkingLive();
+    throw e;
+  }
+
   if (res.status === 429) {
+    removeThinkingLive();
     var d = await res.json().catch(function(){ return {}; });
     addMessage('assistant', 'Tageslimit erreicht. ' + (d.message||'') + '\n\n[Upgraden](/#pricing)');
     document.getElementById('limitWarning')?.classList.remove('hidden');
     return;
   }
-  if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.detail||e.message||'HTTP '+res.status); }
+  if (!res.ok) {
+    removeThinkingLive();
+    var e = await res.json().catch(function(){ return {}; });
+    throw new Error(e.detail||e.message||'HTTP '+res.status);
+  }
 
   var data = await res.json();
   currentConvId = data.conversation_id;
   var text = data.response || '';
-  var meta = {category:data.category, processingTime:data.processing_time_ms, offerPdf:data.offer_pdf, pdfUrl:data.pdf_url};
+  var thinkSteps = data.thinking || [];
+  var meta = {
+    category: data.category,
+    processingTime: data.processing_time_ms,
+    offerPdf: data.offer_pdf,
+    pdfUrl: data.pdf_url,
+    model: data.model_used,
+  };
+
+  removeThinkingLive();
+
+  // Bubble anlegen und sofort Denkvorgang einbauen
+  var bId = createStreamBubble();
+  if (thinkSteps.length) injectThinkingBlock(bId, thinkSteps);
 
   // Wort-für-Wort Simulation
-  var bId = createStreamBubble();
   var words = text.split(' ');
   var shown = '';
   for (var i = 0; i < words.length; i++) {
     shown += (i > 0 ? ' ' : '') + words[i];
     updateStreamBubble(bId, shown);
     var w = words[i];
-    var delay = /[.!?]$/.test(w) ? 55 : /[,;:]$/.test(w) ? 28 : 14;
+    var delay = /[.!?]$/.test(w) ? 45 : /[,;:]$/.test(w) ? 22 : 11;
     await new Promise(function(r){ setTimeout(r, delay); });
   }
-  finalizeStreamBubble(bId, text, meta);
+  finalizeStreamBubble(bId, text, meta, thinkSteps);
   updateUsage(data.remaining_messages);
   if (data.is_new_conversation) loadConversations();
 }
 
-// ── Nachricht senden ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// SEND MESSAGE
+// ══════════════════════════════════════════════════════════════
 async function sendMessage() {
   if (isLoading) return;
   var input = document.getElementById('messageInput');
@@ -685,28 +1118,35 @@ async function sendMessage() {
   updateCharCounter('');
   setLoading(true);
   addMessage('user', msg || '[Bild]');
-  var tid = showTyping();
 
   try {
     if (selectedImage) {
+      showThinkingLive();
       var fd = new FormData();
       fd.append('message', msg || ' ');
       if (currentConvId) fd.append('conversation_id', currentConvId);
       fd.append('image', selectedImage);
-      removeTyping(tid);
       var res = await apiCall('/chat/message/', 'POST', fd, null);
+      removeThinkingLive();
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var d = await res.json();
       currentConvId = d.conversation_id;
       addMessage('assistant', d.response, {category:d.category, processingTime:d.processing_time_ms, offerPdf:d.offer_pdf, pdfUrl:d.pdf_url});
       updateUsage(d.remaining_messages);
     } else {
-      removeTyping(tid);
       await sendWithStream(msg);
     }
   } catch(err) {
-    removeTyping(tid);
-    if (err.message !== 'AUTH_EXPIRED') addMessage('assistant', 'Fehler: ' + (err.message || 'Unbekannt'));
+    removeThinkingLive();
+    // Nur Netzwerk-/API-Fehler anzeigen, keine internen JS-Fehler
+    if (err.message !== 'AUTH_EXPIRED') {
+      var isInternalErr = err instanceof TypeError || (err.message && err.message.includes('is not a function'));
+      if (!isInternalErr) {
+        addMessage('assistant', '⚠️ ' + (err.message || 'Unbekannter Fehler'));
+      } else {
+        console.error('Interner Fehler:', err);
+      }
+    }
   } finally {
     setLoading(false);
     selectedImage = null;
@@ -717,7 +1157,9 @@ async function sendMessage() {
   }
 }
 
-// ── Konversationen ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// CONVERSATIONS
+// ══════════════════════════════════════════════════════════════
 async function loadConversations() {
   try {
     var res = await apiCall('/chat/conversations/?ordering=-updated_at', 'GET', null, null);
@@ -725,7 +1167,7 @@ async function loadConversations() {
     var data = await res.json();
     var items = data.results || data || [];
     var listEl = document.getElementById('conversationList');
-    if (!items.length) { listEl.innerHTML = '<p class="text-slate-700 text-xs">Noch keine Chats.</p>'; return; }
+    if (!items.length) { listEl.innerHTML = '<p class="text-slate-700 text-xs px-1 py-2">Noch keine Chats.</p>'; return; }
     listEl.innerHTML = items.slice(0,15).map(function(cv) {
       var active = cv.id === currentConvId;
       return '<button onclick="loadConv(\'' + esc(cv.id) + '\')" ' +
@@ -781,7 +1223,9 @@ function addWelcomeMessage() {
   );
 }
 
-// ── Input ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
 function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
 function onInput(el) {
   el.style.height = 'auto';
@@ -816,7 +1260,6 @@ function removeImage() {
   document.getElementById('imagePreview').classList.add('hidden');
 }
 
-// ── UI ────────────────────────────────────────────────────────
 function setLoading(v) { isLoading = v; document.getElementById('sendBtn').disabled = v; }
 function scrollToBottom() { var el = document.getElementById('chatMessages'); if(el) el.scrollTop = el.scrollHeight; }
 function updateUsage(rem) {
@@ -826,7 +1269,7 @@ function updateUsage(rem) {
   if (ctr) ctr.textContent = rem + '/' + MESSAGES_LIMIT;
   var pct = Math.min(100, Math.round(used / MESSAGES_LIMIT * 100));
   var bar = document.getElementById('usageBar');
-  if (bar) { bar.style.width = pct + '%'; bar.className = 'usage-bar-fill h-1 rounded-full ' + (pct > 85 ? 'bg-amber-500' : 'bg-indigo-500'); }
+  if (bar) { bar.style.width = pct + '%'; bar.className = 'usage-bar-fill h-1.5 rounded-full ' + (pct > 85 ? 'bg-amber-500' : 'bg-gradient-to-r from-indigo-500 to-violet-500'); }
   if (rem < MESSAGES_LIMIT * 0.15) { var lw = document.getElementById('limitWarning'); if(lw) lw.classList.remove('hidden'); }
 }
 function showToast(msg) {
